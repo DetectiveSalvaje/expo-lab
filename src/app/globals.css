@@ -1,22 +1,47 @@
 @import "tailwindcss";
 
+/* =========================================================
+   SISTEMA DE DISEÑO — expo·lab
+   Variables base. Si cambia un color o radio aquí,
+   se propaga a todo el proyecto.
+   ========================================================= */
+
 :root {
+  /* Color tokens — modo claro */
   --background: #fafaf9;
   --foreground: #161616;
   --muted: #6b6b6b;
+  --muted-soft: #f0eeec;
   --border: #e5e5e3;
-  --accent: #161616;
+  --accent: #1e3a8a;
+  --accent-hover: #16306e;
+  --accent-foreground: #fafaf9;
+
+  /* Radios */
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
+  --color-muted-soft: var(--muted-soft);
   --color-border: var(--border);
   --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-foreground: var(--accent-foreground);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-display);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -24,8 +49,11 @@
     --background: #0e0e0e;
     --foreground: #f4f4f3;
     --muted: #9a9a9a;
+    --muted-soft: #1a1a1a;
     --border: #1f1f1f;
-    --accent: #f4f4f3;
+    --accent: #5b7bd9;
+    --accent-hover: #7a93e3;
+    --accent-foreground: #0a1124;
   }
 }
 
@@ -34,4 +62,10 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Selección de texto con el acento */
+::selection {
+  background: var(--accent);
+  color: var(--accent-foreground);
 }

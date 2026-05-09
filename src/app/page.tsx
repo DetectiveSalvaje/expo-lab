@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Button } from "@/components/ui/Button";
 
 export default function Home() {
   return (
@@ -11,19 +12,13 @@ export default function Home() {
         >
           expo<span className="text-muted">·</span>lab
         </Link>
-        <nav className="flex items-center gap-6 text-sm">
-          <Link
-            href="/login"
-            className="text-muted hover:text-foreground transition-colors"
-          >
+        <nav className="flex items-center gap-2 text-sm">
+          <Button variant="ghost" size="sm" href="/login">
             Iniciar sesión
-          </Link>
-          <Link
-            href="/register"
-            className="rounded-full border border-border px-4 py-1.5 text-foreground hover:bg-foreground hover:text-background transition-colors"
-          >
+          </Button>
+          <Button variant="secondary" size="sm" href="/register">
             Crear cuenta
-          </Link>
+          </Button>
         </nav>
       </header>
 
@@ -44,18 +39,12 @@ export default function Home() {
           encontrar miradas afines y conversar sobre la imagen.
         </p>
         <div className="mt-12 flex flex-col gap-3 sm:flex-row sm:gap-4">
-          <Link
-            href="/register"
-            className="rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background hover:opacity-90 transition-opacity"
-          >
+          <Button variant="primary" size="lg" href="/register">
             Crear mi cuenta
-          </Link>
-          <Link
-            href="/feed"
-            className="rounded-full border border-border px-6 py-3 text-sm font-medium text-foreground hover:bg-border/40 transition-colors"
-          >
+          </Button>
+          <Button variant="secondary" size="lg" href="/feed">
             Ver el feed
-          </Link>
+          </Button>
         </div>
       </section>
 
