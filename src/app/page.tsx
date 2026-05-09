@@ -1,26 +1,10 @@
-import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { SiteHeader } from "@/components/site/SiteHeader";
 
 export default function Home() {
   return (
     <main className="flex flex-1 flex-col">
-      {/* Header minimalista */}
-      <header className="flex items-center justify-between px-6 py-5 sm:px-10">
-        <Link
-          href="/"
-          className="font-mono text-sm tracking-tight text-foreground"
-        >
-          expo<span className="text-muted">·</span>lab
-        </Link>
-        <nav className="flex items-center gap-2 text-sm">
-          <Button variant="ghost" size="sm" href="/login">
-            Iniciar sesión
-          </Button>
-          <Button variant="secondary" size="sm" href="/register">
-            Crear cuenta
-          </Button>
-        </nav>
-      </header>
+      <SiteHeader />
 
       {/* Hero */}
       <section className="flex flex-1 flex-col items-center justify-center px-6 text-center sm:px-10">
