@@ -32,10 +32,12 @@ export default function Home() {
         <p className="mb-6 font-mono text-xs uppercase tracking-[0.2em] text-muted">
           Una comunidad para fotógrafos
         </p>
-        <h1 className="max-w-3xl text-4xl font-medium leading-tight tracking-tight sm:text-6xl">
-          Sube tu trabajo. Descubre a otros.
-          <br />
-          <span className="text-muted">Construye tu archivo visual.</span>
+        <h1 className="font-display text-4xl font-black uppercase leading-[0.95] tracking-tight sm:text-6xl lg:text-7xl">
+          <span className="block sm:whitespace-nowrap">Sube tu trabajo.</span>
+          <span className="block sm:whitespace-nowrap">Descubre a otros.</span>
+          <span className="block sm:whitespace-nowrap text-muted">
+            Construye tu archivo visual.
+          </span>
         </h1>
         <p className="mt-8 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
           expo·lab es un espacio cuidado para mostrar tus fotografías,
