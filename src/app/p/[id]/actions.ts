@@ -16,10 +16,10 @@ export type UpdatePhotoState = {
 function asTrimmedOrNull(
   value: FormDataEntryValue | null,
   max: number,
-): { ok: true; value: string | null } | { ok: false; tooLong: true } {
+): { ok: true; value: string | null } | { ok: false } {
   const v = String(value ?? "").trim();
   if (!v) return { ok: true, value: null };
-  if (v.length > max) return { ok: false, tooLong: true };
+  if (v.length > max) return { ok: false };
   return { ok: true, value: v };
 }
 
@@ -71,7 +71,6 @@ export async function updatePhoto(
   } = await supabase.auth.getUser();
   if (!user) return { error: "Sesión expirada.", success: false };
 
-  // Si no hay medium, limpiamos los campos técnicos
   const techFields = medium
     ? {
         medium,
@@ -106,7 +105,7 @@ export async function updatePhoto(
 }
 
 // =========================================================
-// deletePhoto — borra la foto del storage y de la BD
+// deletePhoto — borra la publicación: archivos + filas
 // =========================================================
 
 export async function deletePhoto(
@@ -118,10 +117,10 @@ export async function deletePhoto(
   } = await supabase.auth.getUser();
   if (!user) return { error: "Sesión expirada." };
 
-  // Recuperamos info de la foto (storage_path + user_id)
+  // Verificar dueño
   const { data: photo } = await supabase
     .from("photos")
-    .select("storage_path, user_id")
+    .select("user_id")
     .eq("id", photoId)
     .maybeSingle();
 
@@ -135,10 +134,20 @@ export async function deletePhoto(
     .eq("id", user.id)
     .single();
 
-  // 1) Borrar archivo del storage (si falla, no detenemos: la fila se borra igual)
-  await supabase.storage.from("photos").remove([photo.storage_path]);
+  // Recuperar todos los storage_path de las imágenes
+  const { data: images } = await supabase
+    .from("photo_images")
+    .select("storage_path")
+    .eq("photo_id", photoId);
 
-  // 2) Borrar fila (cascade borra likes y comments)
+  // 1) Borrar archivos del storage
+  if (images && images.length > 0) {
+    await supabase.storage
+      .from("photos")
+      .remove(images.map((i) => i.storage_path));
+  }
+
+  // 2) Borrar la fila (cascade borra photo_images, likes, comments)
   const { error: deleteError } = await supabase
     .from("photos")
     .delete()

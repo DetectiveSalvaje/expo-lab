@@ -20,7 +20,9 @@ export async function getCurrentUser() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, username, full_name, avatar_url, bio, website")
+    .select(
+      "id, username, full_name, avatar_url, avatar_original_url, bio, website",
+    )
     .eq("id", user.id)
     .single();
 
@@ -30,7 +32,6 @@ export async function getCurrentUser() {
 }
 
 /**
- * Útil para páginas que requieren login. Si no hay usuario, lo devolvemos null
- * para que el caller decida (redirect, mostrar mensaje, etc).
+ * Tipo del usuario logueado (con perfil garantizado).
  */
 export type CurrentUser = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;

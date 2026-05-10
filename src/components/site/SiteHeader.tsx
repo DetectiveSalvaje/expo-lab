@@ -16,6 +16,12 @@ export async function SiteHeader() {
       </Link>
 
       <nav className="flex items-center gap-2 text-sm">
+        <Link
+          href="/feed"
+          className="rounded-full px-4 py-1.5 text-muted transition-colors hover:bg-muted-soft hover:text-foreground"
+        >
+          Feed
+        </Link>
         {session ? (
           <>
             <Button variant="primary" size="sm" href="/upload">

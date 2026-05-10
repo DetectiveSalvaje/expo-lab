@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import Cropper, { type Area } from "react-easy-crop";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
+import { processImage } from "@/lib/processImage";
 import { uploadAvatar } from "./actions";
 import { getCroppedBlob } from "./cropImage";
 
@@ -14,12 +15,13 @@ type Props = {
 };
 
 const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp", "image/avif"];
-const MAX_INPUT_BYTES = 10 * 1024 * 1024; // 10 MB de archivo original
+const MAX_INPUT_BYTES = 10 * 1024 * 1024;
 
 export function AvatarUploader({ username, fullName, avatarUrl }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [sourceFile, setSourceFile] = useState<File | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [pixelCrop, setPixelCrop] = useState<Area | null>(null);
@@ -48,6 +50,7 @@ export function AvatarUploader({ username, fullName, avatarUrl }: Props) {
       return;
     }
 
+    setSourceFile(file);
     const reader = new FileReader();
     reader.onload = () => {
       setImageSrc(reader.result as string);
@@ -59,19 +62,29 @@ export function AvatarUploader({ username, fullName, avatarUrl }: Props) {
 
   function handleCancel() {
     setImageSrc(null);
+    setSourceFile(null);
     setPixelCrop(null);
     setError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   function handleConfirm() {
-    if (!imageSrc || !pixelCrop) return;
+    if (!imageSrc || !pixelCrop || !sourceFile) return;
 
     startTransition(async () => {
       try {
-        const blob = await getCroppedBlob(imageSrc, pixelCrop);
+        // 1) Recortado 512×512 para el avatar de siempre
+        const croppedBlob = await getCroppedBlob(imageSrc, pixelCrop);
+
+        // 2) Original procesado (resize a 1600px max + JPEG 88%) para "Ver foto"
+        const { blob: fullBlob } = await processImage(sourceFile, {
+          maxDimension: 1600,
+          quality: 0.88,
+        });
+
         const formData = new FormData();
-        formData.append("avatar", blob, "avatar.jpg");
+        formData.append("avatar", croppedBlob, "avatar.jpg");
+        formData.append("avatar_full", fullBlob, "avatar-full.jpg");
 
         const result = await uploadAvatar(
           { error: null, success: false },
@@ -83,8 +96,8 @@ export function AvatarUploader({ username, fullName, avatarUrl }: Props) {
           return;
         }
 
-        // Éxito: cierra el editor
         setImageSrc(null);
+        setSourceFile(null);
         setPixelCrop(null);
         setSuccess(true);
         if (fileInputRef.current) fileInputRef.current.value = "";
@@ -111,7 +124,6 @@ export function AvatarUploader({ username, fullName, avatarUrl }: Props) {
       />
 
       {imageSrc ? (
-        // ============= EDITOR DE RECORTE =============
         <div className="mt-6 flex flex-col items-center gap-5">
           <div className="relative h-72 w-72 overflow-hidden rounded-2xl bg-muted-soft sm:h-80 sm:w-80">
             <Cropper
@@ -129,7 +141,6 @@ export function AvatarUploader({ username, fullName, avatarUrl }: Props) {
             />
           </div>
 
-          {/* Slider de zoom */}
           <div className="flex w-72 items-center gap-3 sm:w-80">
             <span className="font-mono text-xs uppercase tracking-wider text-muted">
               Zoom
@@ -148,6 +159,8 @@ export function AvatarUploader({ username, fullName, avatarUrl }: Props) {
 
           <p className="text-center text-xs text-muted">
             Arrastra para reposicionar. Usa el slider para acercar o alejar.
+            <br />
+            Guardamos también la imagen original para que se pueda ver entera.
           </p>
 
           {error && (
@@ -178,7 +191,6 @@ export function AvatarUploader({ username, fullName, avatarUrl }: Props) {
           </div>
         </div>
       ) : (
-        // ============= VISTA NORMAL =============
         <div className="mt-6 flex items-center gap-6">
           <Avatar
             username={username}
@@ -196,7 +208,8 @@ export function AvatarUploader({ username, fullName, avatarUrl }: Props) {
               Cambiar foto
             </Button>
             <p className="mt-2 text-xs text-muted">
-              JPG, PNG, WebP o AVIF. Hasta 10 MB. Recortaremos a cuadrado.
+              JPG, PNG, WebP o AVIF. Hasta 10 MB. Guardamos versión recortada
+              y original.
             </p>
             {error && (
               <p className="mt-2 text-xs text-accent" role="alert">

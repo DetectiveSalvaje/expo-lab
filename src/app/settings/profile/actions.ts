@@ -66,13 +66,12 @@ export async function updateProfile(
     return { error: error.message, success: false, fieldValues };
   }
 
-  // Refresca la página de perfil + el header
   revalidatePath("/", "layout");
   return { error: null, success: true, fieldValues };
 }
 
 // =========================================================
-// uploadAvatar — sube una imagen a Storage y la asocia al perfil
+// uploadAvatar — sube DOS versiones: recortado + original procesado
 // =========================================================
 
 export type AvatarState = {
@@ -81,25 +80,30 @@ export type AvatarState = {
 };
 
 const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp", "image/avif"];
-const MAX_BYTES = 2 * 1024 * 1024; // 2 MB (igual que el bucket)
+const MAX_BYTES_CROPPED = 2 * 1024 * 1024; // 2 MB para el avatar recortado
+const MAX_BYTES_ORIGINAL = 4 * 1024 * 1024; // 4 MB para la versión original procesada
 
 export async function uploadAvatar(
   _prevState: AvatarState,
   formData: FormData,
 ): Promise<AvatarState> {
-  const file = formData.get("avatar") as File | null;
+  const cropped = formData.get("avatar") as File | null;
+  const fullSize = formData.get("avatar_full") as File | null;
 
-  if (!file || file.size === 0) {
+  if (!cropped || cropped.size === 0) {
     return { error: "Selecciona una imagen.", success: false };
   }
-  if (!ALLOWED_MIME.includes(file.type)) {
+  if (!ALLOWED_MIME.includes(cropped.type)) {
     return {
-      error: "Formato no permitido. Usa JPG, PNG, WebP o AVIF.",
+      error: "Formato del recorte no permitido.",
       success: false,
     };
   }
-  if (file.size > MAX_BYTES) {
-    return { error: "La imagen no puede exceder 2 MB.", success: false };
+  if (cropped.size > MAX_BYTES_CROPPED) {
+    return { error: "El recorte excede 2 MB.", success: false };
+  }
+  if (fullSize && fullSize.size > MAX_BYTES_ORIGINAL) {
+    return { error: "La versión original excede 4 MB.", success: false };
   }
 
   const supabase = await createClient();
@@ -110,29 +114,51 @@ export async function uploadAvatar(
     return { error: "Sesión expirada.", success: false };
   }
 
-  // Extension a partir del MIME (más fiable que el filename)
-  const ext = file.type.split("/")[1] === "jpeg" ? "jpg" : file.type.split("/")[1];
-  const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+  const timestamp = Date.now();
+  const ext = cropped.type.split("/")[1] === "jpeg" ? "jpg" : cropped.type.split("/")[1];
 
-  const { error: uploadError } = await supabase.storage
+  // Subir el recortado (avatar visible en todos lados)
+  const croppedPath = `${user.id}/avatar-${timestamp}.${ext}`;
+  const { error: croppedError } = await supabase.storage
     .from("avatars")
-    .upload(path, file, {
-      contentType: file.type,
+    .upload(croppedPath, cropped, {
+      contentType: cropped.type,
       upsert: false,
     });
-
-  if (uploadError) {
-    return { error: uploadError.message, success: false };
+  if (croppedError) {
+    return { error: croppedError.message, success: false };
   }
 
-  // URL pública del nuevo avatar
+  // Subir la versión original (para "Ver foto")
+  let originalUrl: string | null = null;
+  if (fullSize && fullSize.size > 0) {
+    const fullExt = fullSize.type.split("/")[1] === "jpeg" ? "jpg" : fullSize.type.split("/")[1];
+    const originalPath = `${user.id}/avatar-full-${timestamp}.${fullExt}`;
+    const { error: fullError } = await supabase.storage
+      .from("avatars")
+      .upload(originalPath, fullSize, {
+        contentType: fullSize.type,
+        upsert: false,
+      });
+    if (!fullError) {
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("avatars").getPublicUrl(originalPath);
+      originalUrl = publicUrl;
+    }
+    // Si falló subir la original, igual seguimos con el recortado
+  }
+
   const {
-    data: { publicUrl },
-  } = supabase.storage.from("avatars").getPublicUrl(path);
+    data: { publicUrl: croppedUrl },
+  } = supabase.storage.from("avatars").getPublicUrl(croppedPath);
 
   const { error: updateError } = await supabase
     .from("profiles")
-    .update({ avatar_url: publicUrl })
+    .update({
+      avatar_url: croppedUrl,
+      avatar_original_url: originalUrl,
+    })
     .eq("id", user.id);
 
   if (updateError) {

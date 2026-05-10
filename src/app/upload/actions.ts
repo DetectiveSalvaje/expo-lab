@@ -6,73 +6,65 @@ import { createClient } from "@/lib/supabase/server";
 
 export type UploadResult = { error: string };
 
-const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp"];
-const MAX_BYTES = 10 * 1024 * 1024;
+type ImagePayload = {
+  storage_path: string;
+  width: number | null;
+  height: number | null;
+};
 
-function asTrimmedOrNull(value: FormDataEntryValue | null, max: number): string | null {
-  const v = String(value ?? "").trim();
-  if (!v) return null;
-  if (v.length > max) return null; // se valida arriba; null indica "ignorar"
-  return v;
-}
+type CreatePublicationInput = {
+  publicationId: string;
+  title: string;
+  description: string;
+  medium: "digital" | "analog" | null;
+  camera: string | null;
+  lens: string | null;
+  aperture: string | null;
+  iso: number | null;
+  shutter_speed: string | null;
+  images: ImagePayload[];
+};
 
-export async function uploadPhoto(formData: FormData): Promise<UploadResult> {
-  const file = formData.get("photo") as File | null;
-  const title = String(formData.get("title") ?? "").trim();
-  const description = String(formData.get("description") ?? "").trim();
-  const width = parseInt(String(formData.get("width") ?? ""), 10) || null;
-  const height = parseInt(String(formData.get("height") ?? ""), 10) || null;
+const MAX_IMAGES = 8;
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-  // Ficha técnica
-  const mediumRaw = String(formData.get("medium") ?? "").trim();
-  const medium =
-    mediumRaw === "digital" || mediumRaw === "analog" ? mediumRaw : null;
+/**
+ * Crea la publicación: inserta una fila en `photos` y N filas en `photo_images`.
+ * Asume que el cliente ya subió los archivos a Storage en sus paths finales.
+ *
+ * Si algo falla, hace rollback borrando los archivos del storage y la fila.
+ */
+export async function createPublication(
+  input: CreatePublicationInput,
+): Promise<UploadResult> {
+  const {
+    publicationId,
+    title,
+    description,
+    medium,
+    camera,
+    lens,
+    aperture,
+    iso,
+    shutter_speed,
+    images,
+  } = input;
 
-  const camera = asTrimmedOrNull(formData.get("camera"), 100);
-  const lens = asTrimmedOrNull(formData.get("lens"), 100);
-  const aperture = asTrimmedOrNull(formData.get("aperture"), 20);
-  const shutterSpeed = asTrimmedOrNull(formData.get("shutter_speed"), 30);
-  const isoRaw = String(formData.get("iso") ?? "").trim();
-  const iso = isoRaw ? parseInt(isoRaw, 10) : null;
-
-  // Validaciones de imagen
-  if (!file || file.size === 0) return { error: "Selecciona una imagen." };
-  if (!ALLOWED_MIME.includes(file.type)) {
-    return { error: "Formato no permitido. Usa JPG, PNG o WebP." };
+  // Validaciones básicas
+  if (!UUID_REGEX.test(publicationId)) {
+    return { error: "ID de publicación inválido." };
   }
-  if (file.size > MAX_BYTES) {
-    return { error: "La imagen procesada excede 10 MB." };
+  if (!Array.isArray(images) || images.length === 0) {
+    return { error: "Sube al menos una imagen." };
   }
-  if (title.length > 120) return { error: "El título no puede exceder 120 caracteres." };
+  if (images.length > MAX_IMAGES) {
+    return { error: `Máximo ${MAX_IMAGES} imágenes por publicación.` };
+  }
+  if (title.length > 120) return { error: "Título demasiado largo (máx 120)." };
   if (description.length > 2000) {
-    return { error: "La descripción no puede exceder 2000 caracteres." };
+    return { error: "Descripción demasiado larga (máx 2000)." };
   }
-
-  // Validaciones técnicas
-  if (camera && camera.length > 100) return { error: "Cámara demasiado larga." };
-  if (lens && lens.length > 100) return { error: "Lente demasiado largo." };
-  if (aperture && aperture.length > 20) return { error: "Apertura demasiado larga." };
-  if (shutterSpeed && shutterSpeed.length > 30) {
-    return { error: "Velocidad demasiado larga." };
-  }
-  if (iso !== null) {
-    if (Number.isNaN(iso) || iso < 1 || iso > 1_000_000) {
-      return { error: `${medium === "analog" ? "ASA" : "ISO"} inválido.` };
-    }
-  }
-
-  // Si no se eligió medium, los campos técnicos se descartan
-  // (igual los guardaríamos pero por consistencia los limpiamos)
-  const techFields = medium
-    ? { medium, camera, lens, aperture, iso, shutter_speed: shutterSpeed }
-    : {
-        medium: null,
-        camera: null,
-        lens: null,
-        aperture: null,
-        iso: null,
-        shutter_speed: null,
-      };
 
   const supabase = await createClient();
   const {
@@ -80,42 +72,58 @@ export async function uploadPhoto(formData: FormData): Promise<UploadResult> {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Sesión expirada." };
 
+  // Cleanup helper en caso de fallo
+  async function cleanupStorage() {
+    if (images.length === 0) return;
+    await supabase.storage.from("photos").remove(images.map((i) => i.storage_path));
+  }
+
+  // 1) Insertar la publicación
+  const { error: insertError } = await supabase.from("photos").insert({
+    id: publicationId,
+    user_id: user.id,
+    title: title || null,
+    description: description || null,
+    medium,
+    camera,
+    lens,
+    aperture,
+    iso,
+    shutter_speed,
+  });
+
+  if (insertError) {
+    await cleanupStorage();
+    return { error: insertError.message };
+  }
+
+  // 2) Insertar las imágenes con su posición
+  const imageRows = images.map((img, idx) => ({
+    photo_id: publicationId,
+    storage_path: img.storage_path,
+    width: img.width,
+    height: img.height,
+    position: idx,
+  }));
+
+  const { error: imagesError } = await supabase
+    .from("photo_images")
+    .insert(imageRows);
+
+  if (imagesError) {
+    // Rollback: borrar la publicación (cascade borraría photo_images, pero como aún
+    // no se insertaron, solo borramos los archivos)
+    await supabase.from("photos").delete().eq("id", publicationId);
+    await cleanupStorage();
+    return { error: imagesError.message };
+  }
+
+  // 3) Username para redirigir
   const { data: profile } = await supabase
     .from("profiles")
     .select("username")
     .eq("id", user.id)
     .single();
-
-  const ext =
-    file.type === "image/png"
-      ? "png"
-      : file.type === "image/webp"
-        ? "webp"
-        : "jpg";
-  const photoId = crypto.randomUUID();
-  const path = `${user.id}/${photoId}.${ext}`;
-
-  const { error: uploadError } = await supabase.storage
-    .from("photos")
-    .upload(path, file, { contentType: file.type, upsert: false });
-
-  if (uploadError) return { error: uploadError.message };
-
-  const { error: insertError } = await supabase.from("photos").insert({
-    id: photoId,
-    user_id: user.id,
-    storage_path: path,
-    title: title || null,
-    description: description || null,
-    width,
-    height,
-    ...techFields,
-  });
-
-  if (insertError) {
-    await supabase.storage.from("photos").remove([path]);
-    return { error: insertError.message };
-  }
 
   revalidatePath("/", "layout");
   redirect(`/u/${profile?.username ?? ""}`);

@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { Avatar } from "@/components/ui/Avatar";
-import { Button } from "@/components/ui/Button";
+import { AvatarMenu } from "@/components/ui/AvatarMenu";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -28,16 +28,23 @@ export default async function ProfilePage({ params }: Props) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, username, full_name, bio, avatar_url, website, created_at")
+    .select(
+      "id, username, full_name, bio, avatar_url, avatar_original_url, website, created_at",
+    )
     .eq("username", username)
     .maybeSingle();
 
   if (!profile) notFound();
 
-  // Cargar fotos del usuario
+  // Cargar publicaciones del usuario con su primera imagen (portada)
   const { data: photos } = await supabase
     .from("photos")
-    .select("id, storage_path, title, width, height, created_at")
+    .select(
+      `
+      id, title, created_at,
+      images:photo_images ( storage_path, width, height, position )
+    `,
+    )
     .eq("user_id", profile.id)
     .order("created_at", { ascending: false });
 
@@ -57,12 +64,21 @@ export default async function ProfilePage({ params }: Props) {
       <section className="mx-auto w-full max-w-3xl px-6 py-12 sm:py-16">
         {/* Cabecera */}
         <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:items-start sm:gap-8 sm:text-left">
-          <Avatar
-            username={profile.username}
-            fullName={profile.full_name}
-            avatarUrl={profile.avatar_url}
-            size="xl"
-          />
+          {isOwnProfile ? (
+            <AvatarMenu
+              username={profile.username}
+              fullName={profile.full_name}
+              avatarUrl={profile.avatar_url}
+              avatarOriginalUrl={profile.avatar_original_url}
+            />
+          ) : (
+            <Avatar
+              username={profile.username}
+              fullName={profile.full_name}
+              avatarUrl={profile.avatar_url}
+              size="xl"
+            />
+          )}
 
           <div className="flex-1">
             <h1 className="text-2xl font-semibold tracking-tight">
@@ -95,17 +111,15 @@ export default async function ProfilePage({ params }: Props) {
             </p>
 
             {isOwnProfile && (
-              <div className="mt-6 flex flex-wrap justify-center gap-2 sm:justify-start">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  href="/settings/profile"
+              <div className="mt-6 flex flex-wrap justify-center gap-3 sm:justify-start">
+                <Link
+                  href="/upload"
+                  aria-label="Subir nueva foto"
+                  title="Subir foto"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-background transition-opacity hover:opacity-85"
                 >
-                  Editar perfil
-                </Button>
-                <Button variant="primary" size="sm" href="/upload">
-                  Subir foto
-                </Button>
+                  <PlusIcon />
+                </Link>
               </div>
             )}
           </div>
@@ -118,7 +132,7 @@ export default async function ProfilePage({ params }: Props) {
           </h2>
 
           {photos && photos.length > 0 ? (
-            <PhotoGrid photos={photos} />
+            <PhotoGrid photos={photos} profileUsername={profile.username} />
           ) : (
             <div className="mt-6 flex min-h-[200px] items-center justify-center rounded-2xl border border-dashed border-border px-6 py-12 text-center text-sm text-muted">
               {isOwnProfile
@@ -132,29 +146,58 @@ export default async function ProfilePage({ params }: Props) {
   );
 }
 
+function PlusIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 18 18"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <line x1="9" y1="3.5" x2="9" y2="14.5" />
+      <line x1="3.5" y1="9" x2="14.5" y2="9" />
+    </svg>
+  );
+}
+
 async function PhotoGrid({
   photos,
+  profileUsername,
 }: {
   photos: Array<{
     id: string;
-    storage_path: string;
     title: string | null;
-    width: number | null;
-    height: number | null;
+    images: Array<{
+      storage_path: string;
+      width: number | null;
+      height: number | null;
+      position: number;
+    }>;
   }>;
+  profileUsername: string;
 }) {
   const supabase = await createClient();
 
   return (
     <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
       {photos.map((photo) => {
+        const sorted = [...(photo.images ?? [])].sort(
+          (a, b) => a.position - b.position,
+        );
+        const cover = sorted[0];
+        if (!cover) return null;
         const { data } = supabase.storage
           .from("photos")
-          .getPublicUrl(photo.storage_path);
+          .getPublicUrl(cover.storage_path);
+        const hasMultiple = sorted.length > 1;
         return (
           <Link
             key={photo.id}
-            href={`/p/${photo.id}`}
+            href={`/p/${photo.id}?from=u/${profileUsername}`}
             className="group relative block aspect-square overflow-hidden rounded-xl bg-muted-soft"
           >
             <Image
@@ -164,9 +207,33 @@ async function PhotoGrid({
               sizes="(max-width: 640px) 50vw, 33vw"
               className="object-cover transition-opacity group-hover:opacity-90"
             />
+            {hasMultiple && (
+              <span className="pointer-events-none absolute right-2 top-2 flex items-center justify-center rounded-full bg-black/70 p-1.5 text-white backdrop-blur">
+                <StackIcon />
+              </span>
+            )}
           </Link>
         );
       })}
     </div>
+  );
+}
+
+function StackIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3.5" y="3.5" width="8" height="8" rx="1.5" />
+      <path d="M5.5 1.5h6a1.5 1.5 0 0 1 1.5 1.5v6" />
+    </svg>
   );
 }
