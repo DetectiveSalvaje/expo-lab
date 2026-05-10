@@ -22,28 +22,17 @@ export type FeedPhoto = {
     avatar_url: string | null;
   };
   images: FeedImage[];
+  likes_count: number;
+  has_liked: boolean;
+  has_saved: boolean;
 };
 
 type LoadOpts = {
-  /** ISO date string. Devuelve fotos creadas estrictamente antes de este momento. */
   cursor: string;
-  /** Excluir una foto específica (la que se está viendo en el detalle). */
   excludeId?: string;
-  /** Filtrar por autor (perfil context). */
   authorId?: string;
 };
 
-/**
- * Carga la siguiente tanda de publicaciones del feed.
- *
- * Algoritmo actual: simple cronológico — más reciente primero.
- *
- * TODO (cuando exista likes/comentarios):
- *   ORDER BY (
- *     (likes_count + 2 * comments_count + 1)
- *     / power(extract(epoch from (now() - created_at)) / 3600 + 2, 1.5)
- *   ) DESC
- */
 export async function loadMorePhotos(opts: LoadOpts): Promise<FeedPhoto[]> {
   const { cursor, excludeId, authorId } = opts;
   const supabase = await createClient();
@@ -71,7 +60,49 @@ export async function loadMorePhotos(opts: LoadOpts): Promise<FeedPhoto[]> {
     return [];
   }
 
-  return (data ?? []).map((p) => {
+  const photos = data ?? [];
+  if (photos.length === 0) return [];
+
+  const photoIds = photos.map((p) => p.id);
+
+  // Conteo de likes por foto
+  const { data: likesData } = await supabase
+    .from("likes")
+    .select("photo_id")
+    .in("photo_id", photoIds);
+
+  const likesCountMap = new Map<string, number>();
+  for (const row of likesData ?? []) {
+    likesCountMap.set(row.photo_id, (likesCountMap.get(row.photo_id) ?? 0) + 1);
+  }
+
+  // Estado del usuario actual (si está logueado)
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let userLiked = new Set<string>();
+  let userSaved = new Set<string>();
+
+  if (user) {
+    const [likedRes, savedRes] = await Promise.all([
+      supabase
+        .from("likes")
+        .select("photo_id")
+        .eq("user_id", user.id)
+        .in("photo_id", photoIds),
+      supabase
+        .from("saves")
+        .select("photo_id")
+        .eq("user_id", user.id)
+        .in("photo_id", photoIds),
+    ]);
+
+    userLiked = new Set((likedRes.data ?? []).map((r) => r.photo_id));
+    userSaved = new Set((savedRes.data ?? []).map((r) => r.photo_id));
+  }
+
+  return photos.map((p) => {
     const author = Array.isArray(p.author) ? p.author[0] : p.author;
     const sorted = [...(p.images ?? [])].sort(
       (a, b) => a.position - b.position,
@@ -94,17 +125,16 @@ export async function loadMorePhotos(opts: LoadOpts): Promise<FeedPhoto[]> {
       created_at: p.created_at,
       author,
       images,
+      likes_count: likesCountMap.get(p.id) ?? 0,
+      has_liked: userLiked.has(p.id),
+      has_saved: userSaved.has(p.id),
     };
   });
 }
 
-/**
- * Carga la primera tanda. Atajo para evitar pasar un cursor "lejano" desde la página.
- */
-export async function loadInitialPhotos(opts: {
-  excludeId?: string;
-  authorId?: string;
-} = {}): Promise<FeedPhoto[]> {
+export async function loadInitialPhotos(
+  opts: { excludeId?: string; authorId?: string } = {},
+): Promise<FeedPhoto[]> {
   const farFuture = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
   return loadMorePhotos({ cursor: farFuture, ...opts });
 }

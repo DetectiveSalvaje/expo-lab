@@ -7,12 +7,10 @@ import { PhotoCard } from "./PhotoCard";
 
 type Props = {
   initialPhotos: FeedPhoto[];
-  /** Si está presente, cada link de foto incluye ?from=<contexto>. */
   fromContext?: string | null;
-  /** Excluir una foto específica (la que se ve en el detalle). */
   excludeId?: string;
-  /** Filtrar por autor. */
   authorId?: string;
+  isAuthenticated: boolean;
 };
 
 export function PhotoFeed({
@@ -20,6 +18,7 @@ export function PhotoFeed({
   fromContext,
   excludeId,
   authorId,
+  isAuthenticated,
 }: Props) {
   const [photos, setPhotos] = useState<FeedPhoto[]>(initialPhotos);
   const [hasMore, setHasMore] = useState(initialPhotos.length === FEED_PAGE_SIZE);
@@ -35,22 +34,18 @@ export function PhotoFeed({
       setHasMore(false);
     } else {
       setPhotos((prev) => [...prev, ...next]);
-      // Si trajimos menos del page_size, ya no hay más
       if (next.length < FEED_PAGE_SIZE) setHasMore(false);
     }
     setIsLoading(false);
   }, [hasMore, isLoading, photos, excludeId, authorId]);
 
-  // IntersectionObserver para auto-cargar al acercarse al final
   useEffect(() => {
     if (!hasMore) return;
     const el = sentinelRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
-          loadNext();
-        }
+        if (entries[0].isIntersecting) loadNext();
       },
       { rootMargin: "300px" },
     );
@@ -79,7 +74,12 @@ export function PhotoFeed({
   return (
     <div className="flex flex-col gap-12">
       {photos.map((p) => (
-        <PhotoCard key={p.id} photo={p} href={buildHref(p.id)} />
+        <PhotoCard
+          key={p.id}
+          photo={p}
+          href={buildHref(p.id)}
+          isAuthenticated={isAuthenticated}
+        />
       ))}
 
       {hasMore ? (

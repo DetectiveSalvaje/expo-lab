@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { PhotoFeed } from "@/components/site/PhotoFeed";
 import { loadInitialPhotos } from "@/app/actions/photos";
+import { getCurrentUser } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Feed",
@@ -9,7 +10,10 @@ export const metadata: Metadata = {
 };
 
 export default async function FeedPage() {
-  const initialPhotos = await loadInitialPhotos();
+  const [initialPhotos, session] = await Promise.all([
+    loadInitialPhotos(),
+    getCurrentUser(),
+  ]);
 
   return (
     <main className="flex flex-1 flex-col">
@@ -28,7 +32,11 @@ export default async function FeedPage() {
           </p>
         </header>
 
-        <PhotoFeed initialPhotos={initialPhotos} fromContext={null} />
+        <PhotoFeed
+          initialPhotos={initialPhotos}
+          fromContext={null}
+          isAuthenticated={Boolean(session)}
+        />
       </section>
     </main>
   );

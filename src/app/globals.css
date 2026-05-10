@@ -69,3 +69,24 @@ body {
   background: var(--accent);
   color: var(--accent-foreground);
 }
+
+/* =========================================================
+   Animación shutter (like)
+   El icono de apertura rota y se contrae como un disparador.
+   ========================================================= */
+@keyframes shutter-snap {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  45% {
+    transform: rotate(30deg) scale(0.82);
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+.animate-shutter {
+  animation: shutter-snap 350ms cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}

@@ -6,6 +6,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { PhotoCarousel, type CarouselImage } from "@/components/ui/PhotoCarousel";
 import { PhotoMetaButton } from "@/components/ui/PhotoMetaButton";
 import { PhotoFeed } from "@/components/site/PhotoFeed";
+import { PhotoActionBar } from "@/components/photo/PhotoActionBar";
 import { loadInitialPhotos } from "@/app/actions/photos";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
@@ -75,6 +76,34 @@ export default async function PhotoDetailPage({ params, searchParams }: Props) {
 
   const session = await getCurrentUser();
   const isOwner = session?.profile.id === author.id;
+  const isAuthenticated = Boolean(session);
+
+  // Likes count + estado del usuario
+  const { count: likesCount } = await supabase
+    .from("likes")
+    .select("user_id", { count: "exact", head: true })
+    .eq("photo_id", photo.id);
+
+  let hasLiked = false;
+  let hasSaved = false;
+  if (session) {
+    const [likedRes, savedRes] = await Promise.all([
+      supabase
+        .from("likes")
+        .select("user_id")
+        .eq("user_id", session.user.id)
+        .eq("photo_id", photo.id)
+        .maybeSingle(),
+      supabase
+        .from("saves")
+        .select("user_id")
+        .eq("user_id", session.user.id)
+        .eq("photo_id", photo.id)
+        .maybeSingle(),
+    ]);
+    hasLiked = Boolean(likedRes.data);
+    hasSaved = Boolean(savedRes.data);
+  }
 
   // Imágenes del carrusel
   const sortedImages = [...(photo.images ?? [])].sort(
@@ -142,7 +171,18 @@ export default async function PhotoDetailPage({ params, searchParams }: Props) {
 
         <PhotoCarousel images={carouselImages} priority />
 
-        <div className="mt-6 flex items-start justify-between gap-4">
+        {/* Acciones */}
+        <div className="mt-3">
+          <PhotoActionBar
+            photoId={photo.id}
+            likesCount={likesCount ?? 0}
+            hasLiked={hasLiked}
+            hasSaved={hasSaved}
+            isAuthenticated={isAuthenticated}
+          />
+        </div>
+
+        <div className="mt-2 flex items-start justify-between gap-4">
           <div className="flex-1">
             {photo.title && (
               <h1 className="text-xl font-semibold tracking-tight">
@@ -178,6 +218,7 @@ export default async function PhotoDetailPage({ params, searchParams }: Props) {
           fromContext={cascadeContext}
           excludeId={photo.id}
           authorId={isFromAuthor ? author.id : undefined}
+          isAuthenticated={isAuthenticated}
         />
       </section>
     </main>
