@@ -1,6 +1,6 @@
 "use client";
 
-import { useOptimistic, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toggleLike } from "@/app/actions/likes";
 import { cn } from "@/lib/utils";
@@ -12,8 +12,6 @@ type Props = {
   isAuthenticated: boolean;
 };
 
-type State = { liked: boolean; count: number };
-
 export function LikeButton({
   photoId,
   initialLiked,
@@ -24,13 +22,11 @@ export function LikeButton({
   const [isPending, startTransition] = useTransition();
   const [animating, setAnimating] = useState(false);
 
-  const [optimistic, applyOptimistic] = useOptimistic<State, void>(
-    { liked: initialLiked, count: initialCount },
-    (state) => ({
-      liked: !state.liked,
-      count: Math.max(0, state.count + (state.liked ? -1 : 1)),
-    }),
-  );
+  // Estado local: fuente de verdad después del primer render.
+  // No depende de las props del padre, así sobrevive a re-renderizados
+  // del Client Component contenedor (PhotoFeed) que tiene su propio estado.
+  const [liked, setLiked] = useState(initialLiked);
+  const [count, setCount] = useState(initialCount);
 
   function handleClick() {
     if (!isAuthenticated) {
@@ -38,16 +34,29 @@ export function LikeButton({
       return;
     }
 
-    // Animación
+    // Animación visual
     setAnimating(true);
     setTimeout(() => setAnimating(false), 360);
 
+    // Guardamos previo por si hay que revertir
+    const prevLiked = liked;
+    const prevCount = count;
+
+    // Optimistic update — instantáneo y persistente
+    setLiked(!prevLiked);
+    setCount(Math.max(0, prevCount + (prevLiked ? -1 : 1)));
+
     startTransition(async () => {
-      applyOptimistic();
       const result = await toggleLike(photoId);
       if (!result.ok) {
-        // Si falló, useOptimistic se revierte automáticamente al terminar la transición.
+        // Revertimos al estado previo
+        setLiked(prevLiked);
+        setCount(prevCount);
         console.error("[LikeButton]", result.error);
+      } else {
+        // Sincronizamos con el servidor por si hay desfase
+        // (caso raro: doble click muy rápido)
+        setLiked(result.liked);
       }
     });
   }
@@ -56,21 +65,17 @@ export function LikeButton({
     <button
       type="button"
       onClick={handleClick}
-      disabled={isPending && !animating}
+      disabled={isPending}
       className={cn(
         "flex items-center gap-2 rounded-full px-3 py-1.5 transition-colors",
-        "hover:bg-muted-soft",
-        optimistic.liked ? "text-accent" : "text-muted hover:text-foreground",
+        "hover:bg-muted-soft disabled:opacity-100",
+        liked ? "text-accent" : "text-muted hover:text-foreground",
       )}
-      aria-pressed={optimistic.liked}
-      aria-label={
-        optimistic.liked
-          ? "Quitar me gusta"
-          : "Dar me gusta"
-      }
+      aria-pressed={liked}
+      aria-label={liked ? "Quitar me gusta" : "Dar me gusta"}
     >
-      <ApertureIcon active={optimistic.liked} animating={animating} />
-      <span className="font-mono text-sm tabular-nums">{optimistic.count}</span>
+      <ApertureIcon active={liked} animating={animating} />
+      <span className="font-mono text-sm tabular-nums">{count}</span>
     </button>
   );
 }

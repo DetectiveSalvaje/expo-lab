@@ -1,6 +1,6 @@
 "use client";
 
-import { useOptimistic, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toggleSave } from "@/app/actions/saves";
 import { cn } from "@/lib/utils";
@@ -18,11 +18,7 @@ export function SaveButton({
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-
-  const [optimisticSaved, applyOptimistic] = useOptimistic<boolean, void>(
-    initialSaved,
-    (saved) => !saved,
-  );
+  const [saved, setSaved] = useState(initialSaved);
 
   function handleClick() {
     if (!isAuthenticated) {
@@ -30,11 +26,16 @@ export function SaveButton({
       return;
     }
 
+    const prev = saved;
+    setSaved(!prev);
+
     startTransition(async () => {
-      applyOptimistic();
       const result = await toggleSave(photoId);
       if (!result.ok) {
+        setSaved(prev);
         console.error("[SaveButton]", result.error);
+      } else {
+        setSaved(result.saved);
       }
     });
   }
@@ -46,13 +47,13 @@ export function SaveButton({
       disabled={isPending}
       className={cn(
         "flex items-center justify-center rounded-full p-2 transition-colors",
-        "hover:bg-muted-soft",
-        optimisticSaved ? "text-accent" : "text-muted hover:text-foreground",
+        "hover:bg-muted-soft disabled:opacity-100",
+        saved ? "text-accent" : "text-muted hover:text-foreground",
       )}
-      aria-pressed={optimisticSaved}
-      aria-label={optimisticSaved ? "Quitar de favoritos" : "Guardar en favoritos"}
+      aria-pressed={saved}
+      aria-label={saved ? "Quitar de favoritos" : "Guardar en favoritos"}
     >
-      <BookmarkIcon filled={optimisticSaved} />
+      <BookmarkIcon filled={saved} />
     </button>
   );
 }
