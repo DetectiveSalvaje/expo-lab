@@ -19,7 +19,7 @@ export default async function FeedPage() {
     <main className="flex flex-1 flex-col">
       <SiteHeader />
 
-      <section className="mx-auto w-full max-w-2xl px-6 py-12 sm:py-16">
+      <section className="mx-auto w-full max-w-3xl px-6 py-12 sm:py-16">
         <header className="mb-10">
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted">
             Feed comunitario
@@ -36,6 +36,7 @@ export default async function FeedPage() {
           initialPhotos={initialPhotos}
           fromContext={null}
           isAuthenticated={Boolean(session)}
+          currentUserId={session?.user.id ?? null}
         />
       </section>
     </main>

@@ -4,10 +4,9 @@ import type { Metadata } from "next";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { Avatar } from "@/components/ui/Avatar";
 import { PhotoCarousel, type CarouselImage } from "@/components/ui/PhotoCarousel";
-import { PhotoMetaButton } from "@/components/ui/PhotoMetaButton";
 import { PhotoFeed } from "@/components/site/PhotoFeed";
-import { PhotoActionBar } from "@/components/photo/PhotoActionBar";
-import { CommentsSection } from "@/components/photo/CommentsSection";
+import { PhotoEngagement } from "@/components/photo/PhotoEngagement";
+import { CommentsList } from "@/components/photo/CommentsList";
 import { loadInitialPhotos } from "@/app/actions/photos";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
@@ -79,11 +78,17 @@ export default async function PhotoDetailPage({ params, searchParams }: Props) {
   const isOwner = session?.profile.id === author.id;
   const isAuthenticated = Boolean(session);
 
-  // Likes count + estado del usuario
-  const { count: likesCount } = await supabase
-    .from("likes")
-    .select("user_id", { count: "exact", head: true })
-    .eq("photo_id", photo.id);
+  // Contadores y estado del usuario
+  const [{ count: likesCount }, { count: commentsCount }] = await Promise.all([
+    supabase
+      .from("likes")
+      .select("user_id", { count: "exact", head: true })
+      .eq("photo_id", photo.id),
+    supabase
+      .from("comments")
+      .select("id", { count: "exact", head: true })
+      .eq("photo_id", photo.id),
+  ]);
 
   let hasLiked = false;
   let hasSaved = false;
@@ -125,7 +130,7 @@ export default async function PhotoDetailPage({ params, searchParams }: Props) {
     notFound();
   }
 
-  // Cargar cascada inicial según contexto
+  // Cascada
   const cascadePhotos = await loadInitialPhotos({
     excludeId: photo.id,
     authorId: isFromAuthor ? author.id : undefined,
@@ -143,7 +148,7 @@ export default async function PhotoDetailPage({ params, searchParams }: Props) {
       <SiteHeader />
 
       <article className="mx-auto w-full max-w-3xl px-6 py-8 sm:py-12">
-        {/* Autor + acciones */}
+        {/* Autor + acciones del dueño */}
         <header className="mb-6 flex items-start gap-3">
           <Link
             href={`/u/${author.username}`}
@@ -172,45 +177,28 @@ export default async function PhotoDetailPage({ params, searchParams }: Props) {
 
         <PhotoCarousel images={carouselImages} priority />
 
-        {/* Acciones */}
-        <div className="mt-3">
-          <PhotoActionBar
-            photoId={photo.id}
-            likesCount={likesCount ?? 0}
-            hasLiked={hasLiked}
-            hasSaved={hasSaved}
-            isAuthenticated={isAuthenticated}
-          />
-        </div>
-
-        <div className="mt-2 flex items-start justify-between gap-4">
-          <div className="flex-1">
-            {photo.title && (
-              <h1 className="text-xl font-semibold tracking-tight">
-                {photo.title}
-              </h1>
-            )}
-            {photo.description && (
-              <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
-                {photo.description}
-              </p>
-            )}
-          </div>
-          <PhotoMetaButton
-            medium={photo.medium as "digital" | "analog" | null}
-            camera={photo.camera}
-            lens={photo.lens}
-            aperture={photo.aperture}
-            iso={photo.iso}
-            shutterSpeed={photo.shutter_speed}
-          />
-        </div>
-
-        <CommentsSection photoId={photo.id} />
+        <PhotoEngagement
+          photoId={photo.id}
+          title={photo.title}
+          description={photo.description}
+          medium={photo.medium as "digital" | "analog" | null}
+          camera={photo.camera}
+          lens={photo.lens}
+          aperture={photo.aperture}
+          iso={photo.iso}
+          shutterSpeed={photo.shutter_speed}
+          likesCount={likesCount ?? 0}
+          hasLiked={hasLiked}
+          hasSaved={hasSaved}
+          commentsCount={commentsCount ?? 0}
+          isAuthenticated={isAuthenticated}
+        >
+          <CommentsList photoId={photo.id} />
+        </PhotoEngagement>
       </article>
 
       {/* Cascada */}
-      <section className="mx-auto w-full max-w-2xl border-t border-border px-6 py-12 sm:py-16">
+      <section className="mx-auto w-full max-w-3xl border-t border-border px-6 py-12 sm:py-16">
         <h2 className="mb-10 font-mono text-xs uppercase tracking-[0.2em] text-muted">
           {isFromAuthor
             ? `Más de @${author.username}`
@@ -222,6 +210,7 @@ export default async function PhotoDetailPage({ params, searchParams }: Props) {
           excludeId={photo.id}
           authorId={isFromAuthor ? author.id : undefined}
           isAuthenticated={isAuthenticated}
+          currentUserId={session?.user.id ?? null}
         />
       </section>
     </main>

@@ -1,11 +1,17 @@
 "use client";
 
 import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { deleteComment } from "@/app/actions/comments";
 
-type Props = { commentId: string; photoId: string };
+type Props = {
+  commentId: string;
+  photoId: string;
+  onDeleted?: (commentId: string) => void;
+};
 
-export function CommentDeleteButton({ commentId, photoId }: Props) {
+export function CommentDeleteButton({ commentId, photoId, onDeleted }: Props) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   function handleDelete() {
@@ -14,7 +20,12 @@ export function CommentDeleteButton({ commentId, photoId }: Props) {
     }
     startTransition(async () => {
       const result = await deleteComment(commentId, photoId);
-      if (result?.error) window.alert(result.error);
+      if (result?.error) {
+        window.alert(result.error);
+        return;
+      }
+      onDeleted?.(commentId);
+      router.refresh();
     });
   }
 

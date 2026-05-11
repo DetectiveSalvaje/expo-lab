@@ -1,17 +1,29 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
-import { addComment } from "@/app/actions/comments";
+import { addComment, type FeedComment } from "@/app/actions/comments";
 
-type Props = { photoId: string };
+type Props = {
+  photoId: string;
+  /** Si está true al renderizar, hace autofocus en el textarea. */
+  autoFocus?: boolean;
+  /** Callback opcional al añadir un comentario (para actualizar estado del padre). */
+  onAdded?: (comment: FeedComment) => void;
+};
 
-export function CommentForm({ photoId }: Props) {
+export function CommentForm({ photoId, autoFocus, onAdded }: Props) {
+  const router = useRouter();
   const [body, setBody] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (autoFocus) textareaRef.current?.focus();
+  }, [autoFocus]);
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -27,7 +39,9 @@ export function CommentForm({ photoId }: Props) {
       const result = await addComment(photoId, trimmed);
       if (result.ok) {
         setBody("");
-        textareaRef.current?.blur();
+        onAdded?.(result.comment);
+        // Refresca Server Components (ej: CommentsList en /p/[id])
+        router.refresh();
       } else {
         setError(result.error);
       }

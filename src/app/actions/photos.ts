@@ -15,6 +15,12 @@ export type FeedPhoto = {
   title: string | null;
   description: string | null;
   created_at: string;
+  medium: "digital" | "analog" | null;
+  camera: string | null;
+  lens: string | null;
+  aperture: string | null;
+  iso: number | null;
+  shutter_speed: string | null;
   author: {
     id: string;
     username: string;
@@ -23,6 +29,7 @@ export type FeedPhoto = {
   };
   images: FeedImage[];
   likes_count: number;
+  comments_count: number;
   has_liked: boolean;
   has_saved: boolean;
 };
@@ -42,6 +49,7 @@ export async function loadMorePhotos(opts: LoadOpts): Promise<FeedPhoto[]> {
     .select(
       `
       id, title, description, created_at,
+      medium, camera, lens, aperture, iso, shutter_speed,
       author:profiles!user_id ( id, username, full_name, avatar_url ),
       images:photo_images ( storage_path, width, height, position )
     `,
@@ -65,18 +73,26 @@ export async function loadMorePhotos(opts: LoadOpts): Promise<FeedPhoto[]> {
 
   const photoIds = photos.map((p) => p.id);
 
-  // Conteo de likes por foto
-  const { data: likesData } = await supabase
-    .from("likes")
-    .select("photo_id")
-    .in("photo_id", photoIds);
+  // Conteo de likes y comentarios (en paralelo)
+  const [likesRes, commentsRes] = await Promise.all([
+    supabase.from("likes").select("photo_id").in("photo_id", photoIds),
+    supabase.from("comments").select("photo_id").in("photo_id", photoIds),
+  ]);
 
   const likesCountMap = new Map<string, number>();
-  for (const row of likesData ?? []) {
+  for (const row of likesRes.data ?? []) {
     likesCountMap.set(row.photo_id, (likesCountMap.get(row.photo_id) ?? 0) + 1);
   }
 
-  // Estado del usuario actual (si está logueado)
+  const commentsCountMap = new Map<string, number>();
+  for (const row of commentsRes.data ?? []) {
+    commentsCountMap.set(
+      row.photo_id,
+      (commentsCountMap.get(row.photo_id) ?? 0) + 1,
+    );
+  }
+
+  // Estado del usuario (si está logueado)
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -123,9 +139,16 @@ export async function loadMorePhotos(opts: LoadOpts): Promise<FeedPhoto[]> {
       title: p.title,
       description: p.description,
       created_at: p.created_at,
+      medium: p.medium as "digital" | "analog" | null,
+      camera: p.camera,
+      lens: p.lens,
+      aperture: p.aperture,
+      iso: p.iso,
+      shutter_speed: p.shutter_speed,
       author,
       images,
       likes_count: likesCountMap.get(p.id) ?? 0,
+      comments_count: commentsCountMap.get(p.id) ?? 0,
       has_liked: userLiked.has(p.id),
       has_saved: userSaved.has(p.id),
     };

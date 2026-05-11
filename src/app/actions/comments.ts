@@ -3,8 +3,20 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
+export type FeedComment = {
+  id: string;
+  body: string;
+  created_at: string;
+  user_id: string;
+  author: {
+    username: string;
+    full_name: string | null;
+    avatar_url: string | null;
+  };
+};
+
 export type AddCommentResult =
-  | { ok: true; commentId: string }
+  | { ok: true; comment: FeedComment }
   | { ok: false; error: string };
 
 export async function addComment(
@@ -26,15 +38,29 @@ export async function addComment(
   const { data, error } = await supabase
     .from("comments")
     .insert({ user_id: user.id, photo_id: photoId, body: trimmed })
-    .select("id")
+    .select(
+      `
+      id, body, created_at, user_id,
+      author:profiles!user_id ( username, full_name, avatar_url )
+    `,
+    )
     .single();
 
   if (error || !data) {
     return { ok: false, error: error?.message ?? "Error al comentar." };
   }
 
+  const author = Array.isArray(data.author) ? data.author[0] : data.author;
+  const comment: FeedComment = {
+    id: data.id,
+    body: data.body,
+    created_at: data.created_at,
+    user_id: data.user_id,
+    author,
+  };
+
   revalidatePath(`/p/${photoId}`);
-  return { ok: true, commentId: data.id };
+  return { ok: true, comment };
 }
 
 export async function deleteComment(
@@ -47,7 +73,6 @@ export async function deleteComment(
   } = await supabase.auth.getUser();
   if (!user) return { error: "Sesión expirada." };
 
-  // RLS valida que solo el dueño pueda borrar
   const { error } = await supabase
     .from("comments")
     .delete()
@@ -57,4 +82,38 @@ export async function deleteComment(
 
   revalidatePath(`/p/${photoId}`);
   return {};
+}
+
+/**
+ * Carga los comentarios de una foto en orden cronológico inverso (más recientes primero).
+ * Usado para expandir comentarios inline en feed cards.
+ */
+export async function getPhotoComments(
+  photoId: string,
+): Promise<FeedComment[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("comments")
+    .select(
+      `
+      id, body, created_at, user_id,
+      author:profiles!user_id ( username, full_name, avatar_url )
+    `,
+    )
+    .eq("photo_id", photoId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("[getPhotoComments]", error.message);
+    return [];
+  }
+
+  return (data ?? []).map((c) => ({
+    id: c.id,
+    body: c.body,
+    created_at: c.created_at,
+    user_id: c.user_id,
+    author: Array.isArray(c.author) ? c.author[0] : c.author,
+  }));
 }

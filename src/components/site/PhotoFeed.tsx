@@ -11,6 +11,7 @@ type Props = {
   excludeId?: string;
   authorId?: string;
   isAuthenticated: boolean;
+  currentUserId: string | null;
 };
 
 export function PhotoFeed({
@@ -19,6 +20,7 @@ export function PhotoFeed({
   excludeId,
   authorId,
   isAuthenticated,
+  currentUserId,
 }: Props) {
   const [photos, setPhotos] = useState<FeedPhoto[]>(initialPhotos);
   const [hasMore, setHasMore] = useState(initialPhotos.length === FEED_PAGE_SIZE);
@@ -79,6 +81,7 @@ export function PhotoFeed({
           photo={p}
           href={buildHref(p.id)}
           isAuthenticated={isAuthenticated}
+          currentUserId={currentUserId}
         />
       ))}
 
