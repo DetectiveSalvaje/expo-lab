@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { Avatar } from "@/components/ui/Avatar";
 import { AvatarMenu } from "@/components/ui/AvatarMenu";
+import { FollowButton } from "@/components/profile/FollowButton";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -50,6 +51,31 @@ export default async function ProfilePage({ params }: Props) {
 
   const session = await getCurrentUser();
   const isOwnProfile = session?.profile.id === profile.id;
+  const isAuthenticated = Boolean(session);
+
+  // Conteo de seguidores / siguiendo
+  const [{ count: followersCount }, { count: followingCount }] = await Promise.all([
+    supabase
+      .from("follows")
+      .select("follower_id", { count: "exact", head: true })
+      .eq("following_id", profile.id),
+    supabase
+      .from("follows")
+      .select("following_id", { count: "exact", head: true })
+      .eq("follower_id", profile.id),
+  ]);
+
+  // ¿El usuario actual ya sigue a este perfil?
+  let isFollowing = false;
+  if (session && !isOwnProfile) {
+    const { data } = await supabase
+      .from("follows")
+      .select("follower_id")
+      .eq("follower_id", session.user.id)
+      .eq("following_id", profile.id)
+      .maybeSingle();
+    isFollowing = Boolean(data);
+  }
 
   const websiteLabel = profile.website?.replace(/^https?:\/\//, "") ?? null;
   const memberSince = new Date(profile.created_at).toLocaleDateString("es-ES", {
@@ -109,6 +135,27 @@ export default async function ProfilePage({ params }: Props) {
               Miembro desde {memberSince} · {photos?.length ?? 0} foto
               {photos && photos.length === 1 ? "" : "s"}
             </p>
+
+            <div className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 font-mono text-xs uppercase tracking-wider text-muted sm:justify-start">
+              <span>
+                <span className="text-foreground">{followersCount ?? 0}</span>{" "}
+                seguidor{followersCount === 1 ? "" : "es"}
+              </span>
+              <span>
+                <span className="text-foreground">{followingCount ?? 0}</span>{" "}
+                siguiendo
+              </span>
+            </div>
+
+            {!isOwnProfile && (
+              <div className="mt-6 flex justify-center sm:justify-start">
+                <FollowButton
+                  targetUserId={profile.id}
+                  initialFollowing={isFollowing}
+                  isAuthenticated={isAuthenticated}
+                />
+              </div>
+            )}
 
             {isOwnProfile && (
               <div className="mt-6 flex flex-wrap justify-center gap-3 sm:justify-start">

@@ -7,6 +7,7 @@ import { PhotoCarousel, type CarouselImage } from "@/components/ui/PhotoCarousel
 import { PhotoMetaButton } from "@/components/ui/PhotoMetaButton";
 import { PhotoFeed } from "@/components/site/PhotoFeed";
 import { PhotoActionBar } from "@/components/photo/PhotoActionBar";
+import { CommentsSection } from "@/components/photo/CommentsSection";
 import { loadInitialPhotos } from "@/app/actions/photos";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
@@ -204,6 +205,8 @@ export default async function PhotoDetailPage({ params, searchParams }: Props) {
             shutterSpeed={photo.shutter_speed}
           />
         </div>
+
+        <CommentsSection photoId={photo.id} />
       </article>
 
       {/* Cascada */}
