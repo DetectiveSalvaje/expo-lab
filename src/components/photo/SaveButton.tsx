@@ -44,11 +44,12 @@ export function SaveButton({
     <button
       type="button"
       onClick={handleClick}
-      disabled={isPending}
       className={cn(
-        "flex items-center justify-center rounded-full p-2 transition-colors",
-        "hover:bg-muted-soft disabled:opacity-100",
+        "flex select-none items-center justify-center rounded-full p-2 transition-colors touch-manipulation",
+        "hover:bg-muted-soft active:bg-muted-soft",
+        "disabled:opacity-100",
         saved ? "text-accent" : "text-muted hover:text-foreground",
+        isPending && "pointer-events-none",
       )}
       aria-pressed={saved}
       aria-label={saved ? "Quitar de favoritos" : "Guardar en favoritos"}

@@ -14,10 +14,43 @@ type Props = {
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { username } = await params;
+  const { username: rawUsername } = await params;
+  const username = rawUsername.toLowerCase();
+
+  const supabase = await createClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("username, full_name, bio, avatar_url")
+    .eq("username", username)
+    .maybeSingle();
+
+  if (!profile) {
+    return { title: `@${username}` };
+  }
+
+  const title = profile.full_name
+    ? `${profile.full_name} (@${profile.username})`
+    : `@${profile.username}`;
+  const description =
+    profile.bio ?? `Perfil de @${profile.username} en expo·lab.`;
+
   return {
-    title: `@${username}`,
-    description: `Perfil de @${username} en expo·lab.`,
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "profile",
+      ...(profile.avatar_url
+        ? { images: [{ url: profile.avatar_url, alt: title }] }
+        : {}),
+    },
+    twitter: {
+      card: profile.avatar_url ? "summary" : "summary_large_image",
+      title,
+      description,
+      ...(profile.avatar_url ? { images: [profile.avatar_url] } : {}),
+    },
   };
 }
 

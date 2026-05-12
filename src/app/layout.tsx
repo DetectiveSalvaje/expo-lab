@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Montserrat } from "next/font/google";
 import "./globals.css";
+import { getSiteUrl } from "@/lib/site-url";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,20 +20,50 @@ const montserratDisplay = Montserrat({
   weight: ["900"],
 });
 
+const siteUrl = getSiteUrl();
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
     default: "expo·lab — comunidad de fotógrafos",
     template: "%s · expo·lab",
   },
   description:
     "Una comunidad para fotógrafos. Sube tu trabajo, descubre el de otros y construye tu archivo visual.",
-  metadataBase: new URL("https://expo-lab.vercel.app"),
+  applicationName: "expo·lab",
+  keywords: [
+    "fotografía",
+    "comunidad",
+    "fotógrafos",
+    "análogo",
+    "digital",
+    "portfolio",
+  ],
+  authors: [{ name: "expo·lab" }],
   openGraph: {
-    title: "expo·lab",
-    description:
-      "Una comunidad para fotógrafos. Sube tu trabajo, descubre el de otros y construye tu archivo visual.",
     type: "website",
     locale: "es_ES",
+    url: siteUrl,
+    siteName: "expo·lab",
+    title: "expo·lab — comunidad de fotógrafos",
+    description:
+      "Una comunidad para fotógrafos. Sube tu trabajo, descubre el de otros y construye tu archivo visual.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "expo·lab — comunidad de fotógrafos",
+    description:
+      "Una comunidad para fotógrafos. Sube tu trabajo, descubre el de otros y construye tu archivo visual.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
 

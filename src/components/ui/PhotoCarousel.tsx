@@ -20,13 +20,14 @@ type Props = {
 
 /**
  * Carrusel horizontal con scroll-snap nativo.
- * - Funciona con touch en móvil sin librerías.
- * - Flechas en desktop, dots e indicador de posición.
- * - Si solo hay 1 imagen, se renderiza como una sola foto sin controles.
+ * - Touch en mobile y flechas/dots en desktop.
+ * - Detecta el slide actual con IntersectionObserver (más confiable que listeners de scroll en touch).
+ * - Sin barra de scroll visible.
  */
 export function PhotoCarousel({ images, priority, className }: Props) {
   const [current, setCurrent] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const slideRefs = useRef<Array<HTMLDivElement | null>>([]);
 
   // Aspect ratio del contenedor: usamos el de la primera imagen
   const first = images[0];
@@ -35,26 +36,41 @@ export function PhotoCarousel({ images, priority, className }: Props) {
       ? `${first.width} / ${first.height}`
       : "4 / 3";
 
-  // Detectar el slide actual mientras el usuario scrollea
+  // Detectar el slide actual con IntersectionObserver — más confiable que scroll listener
   useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    let frame = 0;
-    function onScroll() {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        if (!el) return;
-        const w = el.clientWidth;
-        const idx = Math.round(el.scrollLeft / w);
-        setCurrent(idx);
-      });
-    }
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      el.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(frame);
-    };
-  }, []);
+    if (images.length <= 1) return;
+    const root = scrollRef.current;
+    if (!root) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // Encontrar la entry con más intersección
+        let best = { idx: -1, ratio: 0 };
+        for (const entry of entries) {
+          if (entry.isIntersecting && entry.intersectionRatio > best.ratio) {
+            const idx = Number(
+              (entry.target as HTMLElement).dataset.slideIndex,
+            );
+            if (!Number.isNaN(idx)) {
+              best = { idx, ratio: entry.intersectionRatio };
+            }
+          }
+        }
+        if (best.idx >= 0) setCurrent(best.idx);
+      },
+      {
+        root,
+        threshold: [0.5, 0.7, 0.9],
+      },
+    );
+
+    const slides = slideRefs.current.filter(
+      (s): s is HTMLDivElement => s !== null,
+    );
+    slides.forEach((s) => observer.observe(s));
+
+    return () => observer.disconnect();
+  }, [images.length]);
 
   function scrollToIndex(idx: number) {
     const el = scrollRef.current;
@@ -91,12 +107,16 @@ export function PhotoCarousel({ images, priority, className }: Props) {
     <div className={cn("relative w-full", className)}>
       <div
         ref={scrollRef}
-        className="flex w-full snap-x snap-mandatory overflow-x-auto rounded-2xl bg-muted-soft scroll-smooth"
+        className="scrollbar-hide flex w-full snap-x snap-mandatory overflow-x-auto rounded-2xl bg-muted-soft scroll-smooth"
         style={{ aspectRatio }}
       >
         {images.map((img, idx) => (
           <div
             key={idx}
+            ref={(el) => {
+              slideRefs.current[idx] = el;
+            }}
+            data-slide-index={idx}
             className="flex h-full w-full flex-none snap-center items-center justify-center"
           >
             <Image
@@ -112,12 +132,7 @@ export function PhotoCarousel({ images, priority, className }: Props) {
         ))}
       </div>
 
-      {/* Contador */}
-      <div className="absolute right-3 top-3 rounded-full bg-black/70 px-2.5 py-1 font-mono text-xs text-white backdrop-blur">
-        {current + 1} / {images.length}
-      </div>
-
-      {/* Flechas (desktop) */}
+      {/* Flechas (desktop only) */}
       <button
         type="button"
         onClick={() => scrollToIndex(Math.max(0, current - 1))}
@@ -139,7 +154,7 @@ export function PhotoCarousel({ images, priority, className }: Props) {
         <ChevronRight />
       </button>
 
-      {/* Dots */}
+      {/* Dots indicador */}
       <div className="mt-3 flex justify-center gap-1.5">
         {images.map((_, idx) => (
           <button
@@ -147,7 +162,10 @@ export function PhotoCarousel({ images, priority, className }: Props) {
             type="button"
             onClick={() => scrollToIndex(idx)}
             className={cn(
-              "h-1.5 rounded-full transition-all",
+              "h-1.5 rounded-full touch-manipulation",
+              // Easing tipo "spring out" — el dot se estira y rebota un poco al pasar de activo a inactivo
+              "transition-[width,background-color] duration-[420ms]",
+              "ease-[cubic-bezier(0.34,1.42,0.64,1)]",
               idx === current ? "w-6 bg-foreground" : "w-1.5 bg-border",
             )}
             aria-label={`Ir a imagen ${idx + 1}`}

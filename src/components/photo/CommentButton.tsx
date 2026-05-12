@@ -10,7 +10,7 @@ export function CommentButton({ count, onClick }: Props) {
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-2 rounded-full px-3 py-1.5 text-muted transition-colors hover:bg-muted-soft hover:text-foreground"
+      className="flex select-none items-center gap-2 rounded-full px-3 py-1.5 text-muted transition-colors touch-manipulation hover:bg-muted-soft hover:text-foreground active:bg-muted-soft"
       aria-label="Comentar"
     >
       <SpeechIcon />

@@ -27,15 +27,63 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const supabase = await createClient();
   const { data: photo } = await supabase
     .from("photos")
-    .select("title, description")
+    .select(
+      `
+      title, description,
+      author:profiles!user_id ( username, full_name ),
+      images:photo_images ( storage_path, width, height, position )
+    `,
+    )
     .eq("id", id)
     .maybeSingle();
 
   if (!photo) return { title: "Foto" };
 
+  const author = Array.isArray(photo.author) ? photo.author[0] : photo.author;
+  const sorted = [...(photo.images ?? [])].sort(
+    (a, b) => a.position - b.position,
+  );
+  const cover = sorted[0];
+
+  const title = photo.title || `Foto de @${author?.username ?? ""}`;
+  const description =
+    photo.description ??
+    `Una fotografía de @${author?.username ?? ""} en expo·lab.`;
+
+  let coverUrl: string | null = null;
+  if (cover) {
+    const { data } = supabase.storage
+      .from("photos")
+      .getPublicUrl(cover.storage_path);
+    coverUrl = data.publicUrl;
+  }
+
   return {
-    title: photo.title || "Foto",
-    description: photo.description ?? "Una fotografía publicada en expo·lab.",
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "article",
+      ...(coverUrl
+        ? {
+            images: [
+              {
+                url: coverUrl,
+                width: cover?.width ?? undefined,
+                height: cover?.height ?? undefined,
+                alt: title,
+              },
+            ],
+          }
+        : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      ...(coverUrl ? { images: [coverUrl] } : {}),
+    },
   };
 }
 

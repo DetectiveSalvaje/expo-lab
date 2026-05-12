@@ -44,15 +44,15 @@ export function FollowButton({
     <button
       type="button"
       onClick={handleClick}
-      disabled={isPending}
       aria-pressed={following}
       className={cn(
-        "group inline-flex h-9 items-center justify-center rounded-full px-5 text-sm font-medium transition-colors",
+        "group inline-flex h-9 select-none items-center justify-center rounded-full px-5 text-sm font-medium transition-colors touch-manipulation",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
         "disabled:opacity-50 disabled:pointer-events-none",
         following
           ? "border border-border bg-transparent text-foreground hover:border-accent/40 hover:bg-accent/5 hover:text-accent"
           : "bg-foreground text-background hover:opacity-85",
+        isPending && "pointer-events-none",
       )}
     >
       {following ? (

@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/Button";
 import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteFooter } from "@/components/site/SiteFooter";
 
 export default function Home() {
   return (
@@ -32,11 +33,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="flex items-center justify-between border-t border-border px-6 py-5 text-xs text-muted sm:px-10">
-        <span>© {new Date().getFullYear()} expo·lab</span>
-        <span className="font-mono">v0.1 · en construcción</span>
-      </footer>
+      <SiteFooter />
     </main>
   );
 }
