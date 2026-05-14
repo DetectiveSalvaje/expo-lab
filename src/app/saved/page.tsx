@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteShell } from "@/components/site/SiteShell";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -58,9 +58,7 @@ export default async function SavedPage() {
     .filter((x): x is NonNullable<typeof x> => x !== null);
 
   return (
-    <main className="flex flex-1 flex-col">
-      <SiteHeader />
-
+    <SiteShell>
       <section className="mx-auto w-full max-w-3xl px-6 py-12 sm:py-16">
         <header className="mb-10">
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted">
@@ -114,6 +112,6 @@ export default async function SavedPage() {
           </div>
         )}
       </section>
-    </main>
+    </SiteShell>
   );
 }

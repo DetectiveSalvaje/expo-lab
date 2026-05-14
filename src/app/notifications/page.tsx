@@ -1,12 +1,11 @@
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { SiteShell } from "@/components/site/SiteShell";
 import { getCurrentUser } from "@/lib/auth";
-import { UploadForm } from "./UploadForm";
 
-export const metadata: Metadata = { title: "Subir foto" };
+export const metadata: Metadata = { title: "Notificaciones" };
 
-export default async function UploadPage() {
+export default async function NotificationsPage() {
   const session = await getCurrentUser();
   if (!session) redirect("/login");
 
@@ -15,19 +14,24 @@ export default async function UploadPage() {
       <section className="mx-auto w-full max-w-2xl px-6 py-12 sm:py-16">
         <header className="mb-10">
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted">
-            Nueva publicación
+            Actividad
           </p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-            Comparte tu trabajo
+            Notificaciones
           </h1>
           <p className="mt-3 text-sm text-muted">
-            Sube hasta 8 imágenes en una misma publicación. Arrástralas para
-            reordenarlas. La primera imagen es la portada que se ve en tu
-            galería y en el feed.
+            Los likes, comentarios y nuevos seguidores aparecerán aquí pronto.
           </p>
         </header>
 
-        <UploadForm userId={session.profile.id} />
+        <div className="rounded-2xl border border-dashed border-border px-6 py-16 text-center">
+          <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted">
+            Próximamente
+          </p>
+          <p className="mt-3 text-sm text-muted">
+            El sistema de notificaciones está en construcción.
+          </p>
+        </div>
       </section>
     </SiteShell>
   );

@@ -1,14 +1,12 @@
 import { Button } from "@/components/ui/Button";
-import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteShell } from "@/components/site/SiteShell";
 import { SiteFooter } from "@/components/site/SiteFooter";
 
 export default function Home() {
   return (
-    <main className="flex flex-1 flex-col">
-      <SiteHeader />
-
+    <SiteShell>
       {/* Hero */}
-      <section className="flex flex-1 flex-col items-center justify-center px-6 text-center sm:px-10">
+      <section className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center sm:px-10 sm:py-24">
         <p className="mb-6 font-mono text-xs uppercase tracking-[0.2em] text-muted">
           Una comunidad para fotógrafos
         </p>
@@ -34,6 +32,6 @@ export default function Home() {
       </section>
 
       <SiteFooter />
-    </main>
+    </SiteShell>
   );
 }

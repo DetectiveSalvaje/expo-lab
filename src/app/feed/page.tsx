@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteShell } from "@/components/site/SiteShell";
 import { PhotoFeed } from "@/components/site/PhotoFeed";
 import { loadInitialPhotos } from "@/app/actions/photos";
 import { getCurrentUser } from "@/lib/auth";
@@ -16,9 +16,7 @@ export default async function FeedPage() {
   ]);
 
   return (
-    <main className="flex flex-1 flex-col">
-      <SiteHeader />
-
+    <SiteShell>
       <section className="mx-auto w-full max-w-3xl px-6 py-12 sm:py-16">
         <header className="mb-10">
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted">
@@ -39,6 +37,6 @@ export default async function FeedPage() {
           currentUserId={session?.user.id ?? null}
         />
       </section>
-    </main>
+    </SiteShell>
   );
 }

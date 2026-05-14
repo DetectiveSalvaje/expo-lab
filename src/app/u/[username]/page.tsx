@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteShell } from "@/components/site/SiteShell";
 import { Avatar } from "@/components/ui/Avatar";
 import { AvatarMenu } from "@/components/ui/AvatarMenu";
 import { FollowButton } from "@/components/profile/FollowButton";
@@ -117,9 +117,7 @@ export default async function ProfilePage({ params }: Props) {
   });
 
   return (
-    <main className="flex flex-1 flex-col">
-      <SiteHeader />
-
+    <SiteShell>
       <section className="mx-auto w-full max-w-3xl px-6 py-12 sm:py-16">
         {/* Cabecera */}
         <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:items-start sm:gap-8 sm:text-left">
@@ -222,7 +220,7 @@ export default async function ProfilePage({ params }: Props) {
           )}
         </div>
       </section>
-    </main>
+    </SiteShell>
   );
 }
 

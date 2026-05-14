@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteShell } from "@/components/site/SiteShell";
 import { Avatar } from "@/components/ui/Avatar";
 import { PhotoCarousel, type CarouselImage } from "@/components/ui/PhotoCarousel";
 import { PhotoFeed } from "@/components/site/PhotoFeed";
@@ -192,9 +192,7 @@ export default async function PhotoDetailPage({ params, searchParams }: Props) {
   });
 
   return (
-    <main className="flex flex-1 flex-col">
-      <SiteHeader />
-
+    <SiteShell>
       <article className="mx-auto w-full max-w-3xl px-6 py-8 sm:py-12">
         {/* Autor + acciones del dueño */}
         <header className="mb-6 flex items-start gap-3">
@@ -261,6 +259,6 @@ export default async function PhotoDetailPage({ params, searchParams }: Props) {
           currentUserId={session?.user.id ?? null}
         />
       </section>
-    </main>
+    </SiteShell>
   );
 }

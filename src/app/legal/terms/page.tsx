@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { SiteHeader } from "@/components/site/SiteHeader";
-import { SiteFooter } from "@/components/site/SiteFooter";
+import { SiteShell } from "@/components/site/SiteShell";
 
 export const metadata: Metadata = {
   title: "Términos de uso",
@@ -10,10 +9,8 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <>
-      <SiteHeader />
-
-      <main className="mx-auto w-full max-w-2xl px-6 py-12 sm:py-16">
+    <SiteShell>
+      <section className="mx-auto w-full max-w-2xl px-6 py-12 sm:py-16">
         <header className="mb-12">
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted">
             Legal
@@ -149,10 +146,8 @@ export default function TermsPage() {
             </p>
           </Section>
         </article>
-      </main>
-
-      <SiteFooter />
-    </>
+      </section>
+    </SiteShell>
   );
 }
 
