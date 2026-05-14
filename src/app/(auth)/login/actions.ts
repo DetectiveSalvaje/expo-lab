@@ -39,5 +39,5 @@ export async function login(
 
   // Refresca el cache del layout para que el header detecte la nueva sesión
   revalidatePath("/", "layout");
-  redirect("/");
+  redirect("/feed");
 }

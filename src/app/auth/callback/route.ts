@@ -12,7 +12,8 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
+  // Por defecto, después de confirmar email / OAuth, mandamos al feed
+  const next = searchParams.get("next") ?? "/feed";
 
   if (code) {
     const supabase = await createClient();
