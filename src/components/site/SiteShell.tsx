@@ -1,18 +1,12 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
+import { getUnreadCount } from "@/app/actions/notifications";
 import { SiteNav } from "./SiteNav";
 
 type Props = {
   children: React.ReactNode;
 };
 
-/**
- * Shell global:
- *  - Logged out  → top header simple con wordmark + CTAs.
- *  - Logged in:
- *      • Móvil  → wordmark arriba + lupa derecha + bottom nav fija.
- *      • Desktop → sidebar angosta con "E" arriba + iconos centrados (incluye lupa).
- */
 export async function SiteShell({ children }: Props) {
   const session = await getCurrentUser();
 
@@ -48,10 +42,13 @@ export async function SiteShell({ children }: Props) {
 
   // === Logged in ===
   const navSession = {
+    id: session.user.id,
     username: session.profile.username,
     fullName: session.profile.full_name,
     avatarUrl: session.profile.avatar_url,
   };
+  const unread = await getUnreadCount();
+  const initialUnread = unread > 0;
 
   return (
     <div className="relative flex min-h-screen flex-col md:flex-row">
@@ -68,13 +65,17 @@ export async function SiteShell({ children }: Props) {
           </span>
         </Link>
 
-        {/* Iconos centrados verticalmente, búsqueda incluida */}
         <div className="flex flex-1 items-center">
-          <SiteNav session={navSession} vertical withSearch />
+          <SiteNav
+            session={navSession}
+            vertical
+            withSearch
+            initialUnread={initialUnread}
+          />
         </div>
       </aside>
 
-      {/* Móvil: header arriba con wordmark a la izq + lupa a la derecha */}
+      {/* Móvil: header */}
       <header className="flex items-center justify-between border-b border-border bg-background px-6 py-4 md:hidden">
         <Link href="/feed" aria-label="Ir al feed">
           <span className="font-display text-base font-black uppercase tracking-tight">
@@ -96,9 +97,9 @@ export async function SiteShell({ children }: Props) {
         {children}
       </main>
 
-      {/* Móvil: bottom nav fija (sin búsqueda — ya está en el header) */}
+      {/* Móvil: bottom nav fija */}
       <nav className="fixed bottom-0 left-0 right-0 z-30 border-t border-border bg-background md:hidden">
-        <SiteNav session={navSession} />
+        <SiteNav session={navSession} initialUnread={initialUnread} />
       </nav>
     </div>
   );

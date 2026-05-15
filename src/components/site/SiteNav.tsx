@@ -5,8 +5,10 @@ import { usePathname } from "next/navigation";
 import { Avatar } from "@/components/ui/Avatar";
 import { cn } from "@/lib/utils";
 import { SettingsMenu } from "./SettingsMenu";
+import { NotificationDot } from "./NotificationDot";
 
 type SessionData = {
+  id: string;
   username: string;
   fullName: string | null;
   avatarUrl: string | null;
@@ -17,12 +19,15 @@ type Props = {
   vertical?: boolean;
   /** Si true, incluye la lupa de búsqueda. Solo en el sidebar de desktop. */
   withSearch?: boolean;
+  /** Si hay alguna notif sin leer al cargar. Realtime se encarga del resto. */
+  initialUnread?: boolean;
 };
 
 export function SiteNav({
   session,
   vertical = false,
   withSearch = false,
+  initialUnread = false,
 }: Props) {
   const pathname = usePathname();
 
@@ -48,13 +53,16 @@ export function SiteNav({
         </NavLink>
       )}
 
-      <NavLink
-        href="/notifications"
-        label="Notificaciones"
-        active={pathname === "/notifications"}
-      >
-        <EyeIcon />
-      </NavLink>
+      <div className="relative">
+        <NavLink
+          href="/notifications"
+          label="Notificaciones"
+          active={pathname === "/notifications"}
+        >
+          <EyeIcon />
+        </NavLink>
+        <NotificationDot userId={session.id} initialUnread={initialUnread} />
+      </div>
 
       <Link
         href={profilePath}
