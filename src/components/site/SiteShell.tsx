@@ -11,7 +11,7 @@ type Props = {
  *  - Logged out  → top header simple con wordmark + CTAs.
  *  - Logged in:
  *      • Móvil  → wordmark arriba + bottom nav fija.
- *      • Desktop → sidebar izquierda con wordmark + iconos verticales.
+ *      • Desktop → sidebar angosta con logo "E" arriba + iconos centrados verticalmente.
  */
 export async function SiteShell({ children }: Props) {
   const session = await getCurrentUser();
@@ -55,14 +55,21 @@ export async function SiteShell({ children }: Props) {
 
   return (
     <div className="relative flex min-h-screen flex-col md:flex-row">
-      {/* Desktop sidebar */}
-      <aside className="hidden md:fixed md:left-0 md:top-0 md:bottom-0 md:z-30 md:flex md:w-32 md:flex-col md:items-center md:border-r md:border-border md:bg-background md:py-8">
-        <Link href="/feed" aria-label="Ir al feed" className="block">
-          <span className="font-display text-sm font-black uppercase tracking-tight">
-            Expo Lab
+      {/* Desktop sidebar — angosta, logo arriba, iconos al centro */}
+      <aside className="hidden md:fixed md:left-0 md:top-0 md:bottom-0 md:z-30 md:flex md:w-20 md:flex-col md:items-center md:border-r md:border-border md:bg-background md:py-6">
+        <Link
+          href="/feed"
+          aria-label="Ir al feed"
+          title="Expo Lab"
+          className="flex h-10 w-10 select-none items-center justify-center rounded-full transition-colors hover:bg-muted-soft active:bg-muted-soft"
+        >
+          <span className="font-display text-xl font-black uppercase leading-none tracking-tight">
+            E
           </span>
         </Link>
-        <div className="mt-16">
+
+        {/* Iconos centrados verticalmente en el espacio restante */}
+        <div className="flex flex-1 items-center">
           <SiteNav session={navSession} vertical />
         </div>
       </aside>
@@ -77,7 +84,7 @@ export async function SiteShell({ children }: Props) {
       </header>
 
       {/* Contenido principal */}
-      <main className="flex flex-1 flex-col pb-20 md:ml-32 md:pb-0">
+      <main className="flex flex-1 flex-col pb-20 md:ml-20 md:pb-0">
         {children}
       </main>
 
