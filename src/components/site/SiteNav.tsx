@@ -15,9 +15,15 @@ type SessionData = {
 type Props = {
   session: SessionData;
   vertical?: boolean;
+  /** Si true, incluye la lupa de búsqueda. Solo en el sidebar de desktop. */
+  withSearch?: boolean;
 };
 
-export function SiteNav({ session, vertical = false }: Props) {
+export function SiteNav({
+  session,
+  vertical = false,
+  withSearch = false,
+}: Props) {
   const pathname = usePathname();
 
   const isProfileActive = pathname === `/u/${session.username}`;
@@ -32,6 +38,16 @@ export function SiteNav({ session, vertical = false }: Props) {
           : "h-16 w-full flex-row justify-around px-2",
       )}
     >
+      {withSearch && (
+        <NavLink
+          href="/search"
+          label="Buscar"
+          active={pathname === "/search"}
+        >
+          <SearchIcon />
+        </NavLink>
+      )}
+
       <NavLink
         href="/notifications"
         label="Notificaciones"
@@ -162,6 +178,25 @@ function PlusIcon() {
     >
       <line x1="9" y1="3.5" x2="9" y2="14.5" />
       <line x1="3.5" y1="9" x2="14.5" y2="9" />
+    </svg>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
     </svg>
   );
 }
