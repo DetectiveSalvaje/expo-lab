@@ -7,42 +7,67 @@ type Props = {
 };
 
 /**
- * Shell global de la app:
- * - Móvil: wordmark arriba + bottom nav fija.
- * - Desktop: sidebar izquierda con wordmark + iconos verticales.
+ * Shell global:
+ *  - Logged out  → top header simple con wordmark + CTAs.
+ *  - Logged in:
+ *      • Móvil  → wordmark arriba + bottom nav fija.
+ *      • Desktop → sidebar izquierda con wordmark + iconos verticales.
  */
 export async function SiteShell({ children }: Props) {
   const session = await getCurrentUser();
 
-  const navSession = session
-    ? {
-        username: session.profile.username,
-        fullName: session.profile.full_name,
-        avatarUrl: session.profile.avatar_url,
-      }
-    : null;
+  // === Logged out ===
+  if (!session) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <header className="flex items-center justify-between border-b border-border px-6 py-5 sm:px-10">
+          <Link href="/" aria-label="Inicio">
+            <span className="font-display text-base font-black uppercase tracking-tight">
+              Expo Lab
+            </span>
+          </Link>
+          <nav className="flex items-center gap-2 text-sm">
+            <Link
+              href="/login"
+              className="rounded-full px-4 py-1.5 text-muted transition-colors hover:bg-muted-soft hover:text-foreground"
+            >
+              Entrar
+            </Link>
+            <Link
+              href="/register"
+              className="rounded-full border border-border px-4 py-1.5 text-foreground transition-colors hover:bg-foreground hover:text-background"
+            >
+              Crear cuenta
+            </Link>
+          </nav>
+        </header>
+        <main className="flex flex-1 flex-col">{children}</main>
+      </div>
+    );
+  }
+
+  // === Logged in ===
+  const navSession = {
+    username: session.profile.username,
+    fullName: session.profile.full_name,
+    avatarUrl: session.profile.avatar_url,
+  };
 
   return (
     <div className="relative flex min-h-screen flex-col md:flex-row">
-      {/* Desktop sidebar (oculta en móvil) */}
-      <aside className="hidden md:fixed md:left-0 md:top-0 md:bottom-0 md:z-30 md:flex md:w-24 md:flex-col md:items-center md:border-r md:border-border md:bg-background md:py-6">
-        <Link
-          href="/feed"
-          aria-label="Ir al feed"
-          className="block px-3 text-center leading-none"
-        >
+      {/* Desktop sidebar */}
+      <aside className="hidden md:fixed md:left-0 md:top-0 md:bottom-0 md:z-30 md:flex md:w-32 md:flex-col md:items-center md:border-r md:border-border md:bg-background md:py-8">
+        <Link href="/feed" aria-label="Ir al feed" className="block">
           <span className="font-display text-sm font-black uppercase tracking-tight">
-            Expo
-            <br />
-            Lab
+            Expo Lab
           </span>
         </Link>
-        <div className="mt-12">
+        <div className="mt-16">
           <SiteNav session={navSession} vertical />
         </div>
       </aside>
 
-      {/* Móvil: header arriba con el wordmark */}
+      {/* Móvil: header arriba con wordmark */}
       <header className="flex items-center justify-between border-b border-border bg-background px-6 py-4 md:hidden">
         <Link href="/feed" aria-label="Ir al feed">
           <span className="font-display text-base font-black uppercase tracking-tight">
@@ -52,7 +77,7 @@ export async function SiteShell({ children }: Props) {
       </header>
 
       {/* Contenido principal */}
-      <main className="flex flex-1 flex-col pb-20 md:ml-24 md:pb-0">
+      <main className="flex flex-1 flex-col pb-20 md:ml-32 md:pb-0">
         {children}
       </main>
 

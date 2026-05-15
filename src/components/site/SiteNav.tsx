@@ -13,37 +13,12 @@ type SessionData = {
 };
 
 type Props = {
-  session: SessionData | null;
+  session: SessionData;
   vertical?: boolean;
 };
 
 export function SiteNav({ session, vertical = false }: Props) {
   const pathname = usePathname();
-
-  if (!session) {
-    // Logged-out: solo CTAs de auth
-    return (
-      <div
-        className={cn(
-          "flex items-center gap-2",
-          vertical ? "flex-col" : "flex-row justify-around w-full",
-        )}
-      >
-        <Link
-          href="/login"
-          className="rounded-full px-4 py-1.5 text-sm text-muted transition-colors hover:bg-muted-soft hover:text-foreground"
-        >
-          Entrar
-        </Link>
-        <Link
-          href="/register"
-          className="rounded-full border border-border px-4 py-1.5 text-sm text-foreground transition-colors hover:bg-foreground hover:text-background"
-        >
-          Crear cuenta
-        </Link>
-      </div>
-    );
-  }
 
   const isProfileActive = pathname === `/u/${session.username}`;
   const profilePath = `/u/${session.username}`;
@@ -52,7 +27,9 @@ export function SiteNav({ session, vertical = false }: Props) {
     <div
       className={cn(
         "flex items-center",
-        vertical ? "flex-col gap-3" : "h-16 flex-row justify-around w-full px-2",
+        vertical
+          ? "flex-col gap-5"
+          : "h-16 w-full flex-row justify-around px-2",
       )}
     >
       <NavLink
@@ -63,18 +40,24 @@ export function SiteNav({ session, vertical = false }: Props) {
         <EyeIcon />
       </NavLink>
 
-      <NavLink href={profilePath} label="Mi perfil" active={isProfileActive}>
+      <Link
+        href={profilePath}
+        aria-label="Mi perfil"
+        title="Mi perfil"
+        className="flex h-10 w-10 select-none items-center justify-center rounded-full transition-colors touch-manipulation hover:bg-muted-soft active:bg-muted-soft"
+      >
         <Avatar
           username={session.username}
           fullName={session.fullName}
           avatarUrl={session.avatarUrl}
           size="sm"
           className={cn(
-            "h-8 w-8 ring-offset-background transition-shadow",
-            isProfileActive && "ring-2 ring-foreground ring-offset-2",
+            "h-8 w-8 transition-shadow",
+            isProfileActive &&
+              "ring-2 ring-foreground ring-offset-2 ring-offset-background",
           )}
         />
-      </NavLink>
+      </Link>
 
       <Link
         href="/upload"
@@ -83,7 +66,6 @@ export function SiteNav({ session, vertical = false }: Props) {
         className={cn(
           "flex h-10 w-10 select-none items-center justify-center rounded-full bg-foreground text-background transition-opacity touch-manipulation",
           "hover:opacity-85 active:opacity-85",
-          pathname === "/upload" && "opacity-90 ring-2 ring-foreground/30 ring-offset-2 ring-offset-background",
         )}
       >
         <PlusIcon />
