@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { SiteShell } from "@/components/site/SiteShell";
 import { getCurrentUser } from "@/lib/auth";
 import { SettingsForm } from "./SettingsForm";
+import { DeleteAccountSection } from "./DeleteAccountSection";
 
 export const metadata: Metadata = { title: "Editar perfil" };
 
@@ -27,6 +28,8 @@ export default async function SettingsProfilePage() {
         </header>
 
         <SettingsForm profile={session.profile} />
+
+        <DeleteAccountSection username={session.profile.username} />
       </section>
     </SiteShell>
   );
