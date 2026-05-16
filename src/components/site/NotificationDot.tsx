@@ -10,56 +10,74 @@ type Props = {
 };
 
 /**
- * Pulso blanco que late en la esquina del icono de notificaciones
- * cuando hay al menos una notif sin leer. Conectado a Supabase Realtime
- * para aparecer instantáneamente.
+ * Pulso blanco en la esquina del icono de notificaciones cuando hay
+ * algo sin leer. Realtime via Supabase para aparecer instantáneamente.
+ *
+ * Defensivo: si la tabla no existe o realtime no está habilitado,
+ * el componente simplemente no muestra nada (sin romper la página).
  */
 export function NotificationDot({ userId, initialUnread }: Props) {
   const [hasUnread, setHasUnread] = useState(initialUnread);
   const pathname = usePathname();
 
-  // Si estamos en /notifications, no mostramos el dot (auto-mark se encarga)
   const visible = hasUnread && pathname !== "/notifications";
 
   useEffect(() => {
+    let cancelled = false;
     const supabase = createClient();
 
-    const channel = supabase
-      .channel(`user-notifications:${userId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${userId}`,
-        },
-        () => {
-          setHasUnread(true);
-        },
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${userId}`,
-        },
-        async () => {
-          // Tras un UPDATE (típicamente marcar como leído), re-check
-          const { count } = await supabase
-            .from("notifications")
-            .select("id", { count: "exact", head: true })
-            .eq("user_id", userId)
-            .is("read_at", null);
-          setHasUnread((count ?? 0) > 0);
-        },
-      )
-      .subscribe();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      channel = supabase
+        .channel(`user-notifications:${userId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "notifications",
+            filter: `user_id=eq.${userId}`,
+          },
+          () => {
+            if (!cancelled) setHasUnread(true);
+          },
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "notifications",
+            filter: `user_id=eq.${userId}`,
+          },
+          async () => {
+            if (cancelled) return;
+            try {
+              const { count } = await supabase
+                .from("notifications")
+                .select("id", { count: "exact", head: true })
+                .eq("user_id", userId)
+                .is("read_at", null);
+              if (!cancelled) setHasUnread((count ?? 0) > 0);
+            } catch {
+              // silent
+            }
+          },
+        )
+        .subscribe();
+    } catch (err) {
+      console.error("[NotificationDot] subscribe failed:", err);
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      cancelled = true;
+      if (channel) {
+        try {
+          supabase.removeChannel(channel);
+        } catch {
+          // silent
+        }
+      }
     };
   }, [userId]);
 
