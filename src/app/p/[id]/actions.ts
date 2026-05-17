@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 // =========================================================
-// updatePhoto — edita título, descripción y ficha técnica
+// updatePhoto — edita metadata + lista de imágenes (1-8)
 // =========================================================
 
 export type UpdatePhotoState = {
@@ -13,72 +13,76 @@ export type UpdatePhotoState = {
   success: boolean;
 };
 
-function asTrimmedOrNull(
-  value: FormDataEntryValue | null,
-  max: number,
-): { ok: true; value: string | null } | { ok: false } {
-  const v = String(value ?? "").trim();
-  if (!v) return { ok: true, value: null };
-  if (v.length > max) return { ok: false };
-  return { ok: true, value: v };
+export type UpdatePhotoInput = {
+  photoId: string;
+  title: string;
+  description: string;
+  medium: "digital" | "analog" | null;
+  camera: string | null;
+  lens: string | null;
+  aperture: string | null;
+  iso: number | null;
+  shutter_speed: string | null;
+  images: Array<{
+    storage_path: string;
+    width: number | null;
+    height: number | null;
+  }>;
+};
+
+function clean(v: string | null, max: number): string | null {
+  if (!v) return null;
+  const t = v.trim();
+  if (!t) return null;
+  if (t.length > max) return t.slice(0, max);
+  return t;
 }
 
 export async function updatePhoto(
-  _prevState: UpdatePhotoState,
-  formData: FormData,
-): Promise<UpdatePhotoState> {
-  const photoId = String(formData.get("photoId") ?? "");
-  if (!photoId) return { error: "Foto no encontrada.", success: false };
-
-  const title = String(formData.get("title") ?? "").trim();
-  const description = String(formData.get("description") ?? "").trim();
-  const mediumRaw = String(formData.get("medium") ?? "").trim();
-  const medium =
-    mediumRaw === "digital" || mediumRaw === "analog" ? mediumRaw : null;
-
-  const cameraR = asTrimmedOrNull(formData.get("camera"), 100);
-  const lensR = asTrimmedOrNull(formData.get("lens"), 100);
-  const apertureR = asTrimmedOrNull(formData.get("aperture"), 20);
-  const shutterR = asTrimmedOrNull(formData.get("shutter_speed"), 30);
-
-  if (!cameraR.ok) return { error: "Cámara demasiado larga.", success: false };
-  if (!lensR.ok) return { error: "Lente demasiado largo.", success: false };
-  if (!apertureR.ok) return { error: "Apertura demasiado larga.", success: false };
-  if (!shutterR.ok) return { error: "Velocidad demasiado larga.", success: false };
-
-  const isoRaw = String(formData.get("iso") ?? "").trim();
-  let iso: number | null = null;
-  if (isoRaw) {
-    iso = parseInt(isoRaw, 10);
-    if (Number.isNaN(iso) || iso < 1 || iso > 1_000_000) {
-      return {
-        error: `${medium === "analog" ? "ASA" : "ISO"} inválido.`,
-        success: false,
-      };
-    }
-  }
-
-  if (title.length > 120) {
-    return { error: "Título demasiado largo (máx 120).", success: false };
-  }
-  if (description.length > 2000) {
-    return { error: "Descripción demasiado larga (máx 2000).", success: false };
-  }
-
+  input: UpdatePhotoInput,
+): Promise<{ error: string } | { ok: true }> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Sesión expirada.", success: false };
+  if (!user) return { error: "Sesión expirada." };
 
-  const techFields = medium
+  // 1. Verificar dueño
+  const { data: photo } = await supabase
+    .from("photos")
+    .select("user_id")
+    .eq("id", input.photoId)
+    .maybeSingle();
+  if (!photo) return { error: "Publicación no encontrada." };
+  if (photo.user_id !== user.id) return { error: "No tienes permiso." };
+
+  // 2. Validaciones
+  if (!Array.isArray(input.images) || input.images.length === 0) {
+    return { error: "La publicación debe tener al menos una imagen." };
+  }
+  if (input.images.length > 8) {
+    return { error: "Máximo 8 imágenes por publicación." };
+  }
+
+  const title = clean(input.title, 120);
+  const description = clean(input.description, 2000);
+  const camera = clean(input.camera, 100);
+  const lens = clean(input.lens, 100);
+  const aperture = clean(input.aperture, 20);
+  const shutter_speed = clean(input.shutter_speed, 30);
+  let iso = input.iso;
+  if (iso !== null && (Number.isNaN(iso) || iso < 1 || iso > 1_000_000)) {
+    return { error: `${input.medium === "analog" ? "ASA" : "ISO"} inválido.` };
+  }
+
+  const techFields = input.medium
     ? {
-        medium,
-        camera: cameraR.value,
-        lens: lensR.value,
-        aperture: apertureR.value,
+        medium: input.medium,
+        camera,
+        lens,
+        aperture,
         iso,
-        shutter_speed: shutterR.value,
+        shutter_speed,
       }
     : {
         medium: null,
@@ -89,19 +93,61 @@ export async function updatePhoto(
         shutter_speed: null,
       };
 
-  const { error } = await supabase
+  // 3. Actualizar metadata
+  const { error: updateError } = await supabase
     .from("photos")
     .update({
-      title: title || null,
-      description: description || null,
+      title,
+      description,
       ...techFields,
     })
-    .eq("id", photoId);
+    .eq("id", input.photoId);
 
-  if (error) return { error: error.message, success: false };
+  if (updateError) return { error: updateError.message };
 
+  // 4. Diff de imágenes
+  const { data: currentImages } = await supabase
+    .from("photo_images")
+    .select("storage_path")
+    .eq("photo_id", input.photoId);
+
+  const currentPaths = new Set(
+    (currentImages ?? []).map((i) => i.storage_path),
+  );
+  const newPaths = new Set(input.images.map((i) => i.storage_path));
+  const removedPaths = [...currentPaths].filter((p) => !newPaths.has(p));
+
+  // 5. Borrar todas las filas de photo_images y reinsertar con posiciones nuevas
+  //    (más simple que UPDATE-en-lote con conflicts por unique constraint)
+  const { error: deleteError } = await supabase
+    .from("photo_images")
+    .delete()
+    .eq("photo_id", input.photoId);
+
+  if (deleteError) return { error: deleteError.message };
+
+  const newRows = input.images.map((img, idx) => ({
+    photo_id: input.photoId,
+    storage_path: img.storage_path,
+    width: img.width,
+    height: img.height,
+    position: idx,
+  }));
+
+  const { error: insertError } = await supabase
+    .from("photo_images")
+    .insert(newRows);
+
+  if (insertError) return { error: insertError.message };
+
+  // 6. Borrar archivos sobrantes del Storage (best effort)
+  if (removedPaths.length > 0) {
+    await supabase.storage.from("photos").remove(removedPaths);
+  }
+
+  revalidatePath(`/p/${input.photoId}`);
   revalidatePath("/", "layout");
-  redirect(`/p/${photoId}`);
+  return { ok: true };
 }
 
 // =========================================================
@@ -117,7 +163,6 @@ export async function deletePhoto(
   } = await supabase.auth.getUser();
   if (!user) return { error: "Sesión expirada." };
 
-  // Verificar dueño
   const { data: photo } = await supabase
     .from("photos")
     .select("user_id")
@@ -127,27 +172,23 @@ export async function deletePhoto(
   if (!photo) return { error: "Foto no encontrada." };
   if (photo.user_id !== user.id) return { error: "No tienes permiso." };
 
-  // Username para redirigir
   const { data: profile } = await supabase
     .from("profiles")
     .select("username")
     .eq("id", user.id)
     .single();
 
-  // Recuperar todos los storage_path de las imágenes
   const { data: images } = await supabase
     .from("photo_images")
     .select("storage_path")
     .eq("photo_id", photoId);
 
-  // 1) Borrar archivos del storage
   if (images && images.length > 0) {
     await supabase.storage
       .from("photos")
       .remove(images.map((i) => i.storage_path));
   }
 
-  // 2) Borrar la fila (cascade borra photo_images, likes, comments)
   const { error: deleteError } = await supabase
     .from("photos")
     .delete()

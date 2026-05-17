@@ -25,37 +25,56 @@ export default async function EditPhotoPage({ params }: Props) {
   const { data: photo } = await supabase
     .from("photos")
     .select(
-      "id, user_id, title, description, medium, camera, lens, aperture, iso, shutter_speed",
+      `
+      id, user_id, title, description, medium, camera, lens, aperture, iso, shutter_speed,
+      images:photo_images ( id, storage_path, width, height, position )
+      `,
     )
     .eq("id", id)
     .maybeSingle();
 
   if (!photo) notFound();
   if (photo.user_id !== session.profile.id) {
-    // No es el dueño — mandamos a la vista de detalle
     redirect(`/p/${id}`);
   }
 
+  const sortedImages = [...(photo.images ?? [])].sort(
+    (a, b) => a.position - b.position,
+  );
+  const imagesWithUrls = sortedImages.map((img) => {
+    const { data } = supabase.storage
+      .from("photos")
+      .getPublicUrl(img.storage_path);
+    return {
+      id: img.id,
+      storage_path: img.storage_path,
+      url: data.publicUrl,
+      width: img.width,
+      height: img.height,
+    };
+  });
+
   return (
     <SiteShell>
-      <section className="mx-auto w-full max-w-xl px-6 py-12 sm:py-16">
+      <section className="mx-auto w-full max-w-2xl px-6 py-12 sm:py-16">
         <header className="mb-10">
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted">
-            Editar foto
+            Editar publicación
           </p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-            Ajusta los datos
+            Ajusta tus imágenes y datos
           </h1>
           <p className="mt-3 text-sm text-muted">
-            Puedes cambiar el título, la descripción y la ficha técnica. La
-            imagen no se puede sustituir desde aquí — para reemplazarla,
-            elimina la foto y sube una nueva.
+            Podés añadir, eliminar y reordenar imágenes (mínimo 1, máximo 8) y
+            actualizar la metadata. Las imágenes nuevas se procesan y suben al
+            confirmar.
           </p>
         </header>
 
         <EditForm
           photo={{
             id: photo.id,
+            userId: photo.user_id,
             title: photo.title,
             description: photo.description,
             medium: photo.medium as "digital" | "analog" | null,
@@ -65,6 +84,7 @@ export default async function EditPhotoPage({ params }: Props) {
             iso: photo.iso,
             shutter_speed: photo.shutter_speed,
           }}
+          initialImages={imagesWithUrls}
         />
       </section>
     </SiteShell>
