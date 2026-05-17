@@ -21,22 +21,21 @@ type Props = {
 /**
  * Carrusel horizontal con scroll-snap nativo.
  * - Touch en mobile y flechas/dots en desktop.
- * - Detecta el slide actual con IntersectionObserver (más confiable que listeners de scroll en touch).
- * - Sin barra de scroll visible.
+ * - Detecta el slide actual con IntersectionObserver.
+ * - Sin bordes redondeados (mantiene aspecto original).
+ * - Edge-to-edge en mobile (rompe el padding del padre vía -mx-6).
  */
 export function PhotoCarousel({ images, priority, className }: Props) {
   const [current, setCurrent] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const slideRefs = useRef<Array<HTMLDivElement | null>>([]);
 
-  // Aspect ratio del contenedor: usamos el de la primera imagen
   const first = images[0];
   const aspectRatio =
     first?.width && first?.height
       ? `${first.width} / ${first.height}`
       : "4 / 3";
 
-  // Detectar el slide actual con IntersectionObserver — más confiable que scroll listener
   useEffect(() => {
     if (images.length <= 1) return;
     const root = scrollRef.current;
@@ -44,7 +43,6 @@ export function PhotoCarousel({ images, priority, className }: Props) {
 
     const observer = new IntersectionObserver(
       (entries) => {
-        // Encontrar la entry con más intersección
         let best = { idx: -1, ratio: 0 };
         for (const entry of entries) {
           if (entry.isIntersecting && entry.intersectionRatio > best.ratio) {
@@ -80,13 +78,13 @@ export function PhotoCarousel({ images, priority, className }: Props) {
 
   if (images.length === 0) return null;
 
-  // Caso simple: una sola imagen
+  // Una sola imagen
   if (images.length === 1) {
     const img = images[0];
     return (
       <div
         className={cn(
-          "relative w-full overflow-hidden rounded-2xl bg-muted-soft",
+          "-mx-6 w-screen overflow-hidden bg-muted-soft sm:mx-0 sm:w-full",
           className,
         )}
       >
@@ -107,7 +105,7 @@ export function PhotoCarousel({ images, priority, className }: Props) {
     <div className={cn("relative w-full", className)}>
       <div
         ref={scrollRef}
-        className="scrollbar-hide flex w-full snap-x snap-mandatory overflow-x-auto rounded-2xl bg-muted-soft scroll-smooth"
+        className="scrollbar-hide -mx-6 flex w-screen snap-x snap-mandatory overflow-x-auto bg-muted-soft scroll-smooth sm:mx-0 sm:w-full"
         style={{ aspectRatio }}
       >
         {images.map((img, idx) => (
@@ -163,7 +161,6 @@ export function PhotoCarousel({ images, priority, className }: Props) {
             onClick={() => scrollToIndex(idx)}
             className={cn(
               "h-1.5 rounded-full touch-manipulation",
-              // Easing tipo "spring out" — el dot se estira y rebota un poco al pasar de activo a inactivo
               "transition-[width,background-color] duration-[420ms]",
               "ease-[cubic-bezier(0.34,1.42,0.64,1)]",
               idx === current ? "w-6 bg-foreground" : "w-1.5 bg-border",
