@@ -65,6 +65,20 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
+  // PWA — configuración específica de Apple (Android usa el manifest)
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "expo·lab",
+  },
+  // Color de la barra del navegador / status bar al instalar
+  themeColor: "#0e0e0e",
+  // Evita que iOS detecte teléfonos/direcciones automáticamente
+  formatDetection: {
+    telephone: false,
+    email: false,
+    address: false,
+  },
 };
 
 export default function RootLayout({
