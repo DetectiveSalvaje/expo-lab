@@ -65,7 +65,7 @@ export function PhotoMetaButton(props: PhotoMeta) {
       {open && (
         <div
           role="dialog"
-          className="absolute left-0 top-full z-10 mt-2 w-72 rounded-2xl border border-border bg-background p-5 shadow-lg"
+          className="absolute right-0 top-full z-10 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-background p-5 shadow-lg"
         >
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted">
             Ficha técnica
