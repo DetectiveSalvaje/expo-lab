@@ -11,8 +11,8 @@ export default function Home() {
           Una comunidad para fotógrafos
         </p>
         <h1 className="font-display text-4xl font-black uppercase leading-[0.95] tracking-tight sm:text-6xl lg:text-7xl">
-          <span className="block sm:whitespace-nowrap">Comparte tu obra.</span>
           <span className="block sm:whitespace-nowrap">Conecta.</span>
+          <span className="block sm:whitespace-nowrap">Comparte.</span>
           <span className="block sm:whitespace-nowrap text-muted">
             Construye tu archivo visual.
           </span>
