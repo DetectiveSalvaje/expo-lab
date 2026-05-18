@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Montserrat } from "next/font/google";
 import "./globals.css";
 import { getSiteUrl } from "@/lib/site-url";
@@ -21,6 +21,14 @@ const montserratDisplay = Montserrat({
 });
 
 const siteUrl = getSiteUrl();
+
+// ⚠️ En Next.js 15+ themeColor, viewport, colorScheme van en su propio export.
+export const viewport: Viewport = {
+  themeColor: "#0e0e0e",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -71,8 +79,6 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "expo·lab",
   },
-  // Color de la barra del navegador / status bar al instalar
-  themeColor: "#0e0e0e",
   // Evita que iOS detecte teléfonos/direcciones automáticamente
   formatDetection: {
     telephone: false,
