@@ -99,7 +99,9 @@ export default async function SavedPage() {
                     alt={photo.title || ""}
                     fill
                     sizes="(max-width: 640px) 50vw, 33vw"
-                    className="object-cover transition-opacity group-hover:opacity-90"
+                    className="no-touch-save object-cover transition-opacity group-hover:opacity-90"
+                    draggable={false}
+                    onContextMenu={(e) => e.preventDefault()}
                   />
                   {photo.imageCount > 1 && (
                     <span className="pointer-events-none absolute right-2 top-2 rounded-full bg-black/70 px-2 py-0.5 font-mono text-xs text-white backdrop-blur">

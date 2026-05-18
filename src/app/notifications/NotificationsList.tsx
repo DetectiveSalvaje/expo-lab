@@ -80,7 +80,9 @@ function NotificationItemRow({ item }: { item: NotificationItem }) {
           <img
             src={item.photo_cover_url}
             alt=""
-            className="h-full w-full object-cover"
+            className="no-touch-save h-full w-full object-cover"
+            draggable={false}
+            onContextMenu={(e) => e.preventDefault()}
           />
         </span>
       )}

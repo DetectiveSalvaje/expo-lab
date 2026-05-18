@@ -93,9 +93,11 @@ export function PhotoCarousel({ images, priority, className }: Props) {
           alt={img.alt ?? ""}
           width={img.width ?? 1600}
           height={img.height ?? 1200}
-          className="block h-auto w-full"
+          className="no-touch-save block h-auto w-full"
           sizes="(max-width: 768px) 100vw, 768px"
           priority={priority}
+          draggable={false}
+          onContextMenu={(e) => e.preventDefault()}
         />
       </div>
     );
@@ -122,9 +124,11 @@ export function PhotoCarousel({ images, priority, className }: Props) {
               alt={img.alt ?? ""}
               width={img.width ?? 1600}
               height={img.height ?? 1200}
-              className="max-h-full max-w-full object-contain"
+              className="no-touch-save max-h-full max-w-full object-contain"
               sizes="(max-width: 768px) 100vw, 768px"
               priority={priority && idx === 0}
+              draggable={false}
+              onContextMenu={(e) => e.preventDefault()}
             />
           </div>
         ))}

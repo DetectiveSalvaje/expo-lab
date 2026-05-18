@@ -159,8 +159,10 @@ function Lightbox({
           width={1600}
           height={1600}
           sizes="(max-width: 768px) 100vw, 90vw"
-          className="block h-auto max-h-[88vh] w-auto max-w-full rounded-2xl object-contain"
+          className="no-touch-save block h-auto max-h-[88vh] w-auto max-w-full rounded-2xl object-contain"
           priority
+          draggable={false}
+          onContextMenu={(e) => e.preventDefault()}
         />
       </div>
 
