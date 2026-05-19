@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Montserrat } from "next/font/google";
 import "./globals.css";
 import { getSiteUrl } from "@/lib/site-url";
+import { ImageProtection } from "@/components/site/ImageProtection";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -98,6 +99,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${montserratDisplay.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
+        <ImageProtection />
         {children}
       </body>
     </html>

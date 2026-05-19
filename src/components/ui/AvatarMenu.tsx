@@ -162,7 +162,6 @@ function Lightbox({
           className="no-touch-save block h-auto max-h-[88vh] w-auto max-w-full rounded-2xl object-contain"
           priority
           draggable={false}
-          onContextMenu={(e) => e.preventDefault()}
         />
       </div>
 

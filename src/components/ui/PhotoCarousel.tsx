@@ -97,7 +97,6 @@ export function PhotoCarousel({ images, priority, className }: Props) {
           sizes="(max-width: 768px) 100vw, 768px"
           priority={priority}
           draggable={false}
-          onContextMenu={(e) => e.preventDefault()}
         />
       </div>
     );
@@ -128,7 +127,6 @@ export function PhotoCarousel({ images, priority, className }: Props) {
               sizes="(max-width: 768px) 100vw, 768px"
               priority={priority && idx === 0}
               draggable={false}
-              onContextMenu={(e) => e.preventDefault()}
             />
           </div>
         ))}

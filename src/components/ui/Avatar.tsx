@@ -53,7 +53,6 @@ export function Avatar({
           className="no-touch-save object-cover"
           sizes={imageSizes[size]}
           draggable={false}
-          onContextMenu={(e) => e.preventDefault()}
         />
       ) : (
         <span>{initial}</span>

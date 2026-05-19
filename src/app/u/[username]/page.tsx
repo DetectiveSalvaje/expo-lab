@@ -285,7 +285,6 @@ async function PhotoGrid({
               sizes="(max-width: 640px) 50vw, 33vw"
               className="no-touch-save object-cover transition-opacity group-hover:opacity-90"
               draggable={false}
-              onContextMenu={(e) => e.preventDefault()}
             />
             {hasMultiple && (
               <span className="pointer-events-none absolute right-2 top-2 flex items-center justify-center rounded-full bg-black/70 p-1.5 text-white backdrop-blur">

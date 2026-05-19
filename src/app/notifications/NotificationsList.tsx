@@ -82,7 +82,6 @@ function NotificationItemRow({ item }: { item: NotificationItem }) {
             alt=""
             className="no-touch-save h-full w-full object-cover"
             draggable={false}
-            onContextMenu={(e) => e.preventDefault()}
           />
         </span>
       )}
