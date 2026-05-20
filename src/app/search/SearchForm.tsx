@@ -17,7 +17,7 @@ export function SearchForm() {
     inputRef.current?.focus();
   }, []);
 
-  // Debounce la búsqueda — esperá 250ms tras la última tecla
+  // Debounce la búsqueda — espera 250ms tras la última tecla
   useEffect(() => {
     const trimmed = query.trim();
     if (trimmed.length < 2) {

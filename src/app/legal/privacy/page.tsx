@@ -35,12 +35,12 @@ export default function PrivacyPage() {
               </li>
               <li>
                 Tu <strong>nombre de usuario</strong> (público) y, si lo
-                completás, tu nombre, biografía, web y foto de perfil.
+                completas, tu nombre, biografía, web y foto de perfil.
               </li>
               <li>
                 Las <strong>fotografías</strong> que publiques con su título,
                 descripción y metadatos técnicos (cámara, lente, etc., si los
-                proveés).
+                provees).
               </li>
               <li>
                 Tu <strong>actividad</strong>: likes, comentarios, guardados y
@@ -57,10 +57,10 @@ export default function PrivacyPage() {
             <p>
               <strong>Públicos para cualquiera:</strong> tu nombre de usuario,
               foto de perfil, biografía, web, fotografías que publiques, likes
-              dados, comentarios, y a quién seguís.
+              dados, comentarios, y a quién sigues.
             </p>
             <p className="mt-3">
-              <strong>Privados para vos:</strong> tu correo electrónico, tu
+              <strong>Privados para ti:</strong> tu correo electrónico, tu
               contraseña (siempre cifrada), y las fotos que guardes en
               "Guardados". Nadie más los ve.
             </p>
@@ -106,13 +106,13 @@ export default function PrivacyPage() {
           </Section>
 
           <Section title="Tus derechos">
-            <p>Podés en cualquier momento:</p>
+            <p>Puedes en cualquier momento:</p>
             <ul className="ml-5 mt-3 list-disc space-y-1.5">
               <li>Editar tu perfil (nombre, bio, web, foto).</li>
               <li>Borrar fotografías que hayas publicado.</li>
               <li>
                 Solicitar la <strong>eliminación de tu cuenta</strong> y todos
-                los datos asociados — escribinos al contacto de abajo (próximamente
+                los datos asociados — escríbenos al contacto de abajo (próximamente
                 vamos a añadir el botón directo en configuración).
               </li>
             </ul>
@@ -134,7 +134,7 @@ export default function PrivacyPage() {
 
           <Section title="Contacto">
             <p>
-              Para cualquier consulta sobre privacidad, escribinos a{" "}
+              Para cualquier consulta sobre privacidad, escríbenos a{" "}
               <a
                 href="mailto:hola@expo-lab.app"
                 className="text-accent underline-offset-4 hover:underline"

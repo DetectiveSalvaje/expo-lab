@@ -24,17 +24,17 @@ export default function TermsPage() {
         </header>
 
         <article className="space-y-10 text-sm leading-relaxed text-foreground/90">
-          <Section title="Al usar expo·lab aceptás estos términos">
+          <Section title="Al usar expo·lab aceptas estos términos">
             <p>
-              Al registrarte y usar la plataforma, aceptás cumplir con lo que
-              está escrito acá. Si no estás de acuerdo, no uses el servicio.
+              Al registrarte y usar la plataforma, aceptas cumplir con lo que
+              está escrito aquí. Si no estás de acuerdo, no uses el servicio.
             </p>
           </Section>
 
           <Section title="Tu cuenta">
             <p>
-              Sos responsable de mantener tu contraseña segura. No compartas
-              tu cuenta con otras personas. Si sospechás que alguien accedió
+              Eres responsable de mantener tu contraseña segura. No compartas
+              tu cuenta con otras personas. Si sospechas que alguien accedió
               sin permiso, cambia tu contraseña inmediatamente.
             </p>
             <p className="mt-3">
@@ -58,14 +58,14 @@ export default function TermsPage() {
               publicidad, no las entrenamos contra modelos de IA.</strong>
             </p>
             <p className="mt-3">
-              Cuando borrás una foto, la quitamos de la plataforma y del
+              Cuando borras una foto, la quitamos de la plataforma y del
               almacenamiento.
             </p>
           </Section>
 
-          <Section title="Solo subí lo que es tuyo">
+          <Section title="Solo sube lo que es tuyo">
             <p>
-              No subas fotografías que no hayas tomado vos, salvo que tengas
+              No subas fotografías que no hayas tomado tú, salvo que tengas
               permiso explícito del autor o que la imagen esté en dominio
               público / con licencia compatible (Creative Commons, etc).
             </p>
@@ -93,7 +93,7 @@ export default function TermsPage() {
 
           <Section title="Comportamiento en la comunidad">
             <p>
-              Comentá con respeto. La crítica fotográfica es bienvenida, el
+              Comenta con respeto. La crítica fotográfica es bienvenida, el
               hostigamiento no. No exigimos un tono particular — solo no seas
               cruel con otros usuarios.
             </p>
@@ -115,7 +115,7 @@ export default function TermsPage() {
 
           <Section title="Cancelación">
             <p>
-              Podés borrar tu cuenta en cualquier momento. Al hacerlo,
+              Puedes borrar tu cuenta en cualquier momento. Al hacerlo,
               eliminamos tu perfil, fotos, comentarios y datos asociados de
               forma permanente.
             </p>
@@ -135,7 +135,7 @@ export default function TermsPage() {
 
           <Section title="Contacto">
             <p>
-              Para cualquier consulta legal, escribinos a{" "}
+              Para cualquier consulta legal, escríbenos a{" "}
               <a
                 href="mailto:hola@expo-lab.app"
                 className="text-accent underline-offset-4 hover:underline"

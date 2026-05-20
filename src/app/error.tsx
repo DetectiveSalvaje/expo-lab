@@ -34,8 +34,8 @@ export default function GlobalError({ error, reset }: Props) {
           Algo se desencuadró
         </h1>
         <p className="mt-4 text-sm leading-relaxed text-muted">
-          Pasó algo inesperado de nuestro lado. Probá de nuevo, y si persiste,
-          volvé al inicio.
+          Ocurrió algo inesperado de nuestro lado. Inténtalo de nuevo, y si
+          persiste, vuelve al inicio.
         </p>
         {error.digest && (
           <p className="mt-3 font-mono text-xs text-muted">

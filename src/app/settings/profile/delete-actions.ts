@@ -12,7 +12,7 @@ export type DeleteAccountResult = { error: string } | { ok: true };
  *
  * Pasos:
  * 1. Verifica que el usuario esté logueado.
- * 2. Verifica que haya tipeado su username exacto para confirmar.
+ * 2. Verifica que haya escrito su username exacto para confirmar.
  * 3. Borra todos los archivos del usuario en Storage (avatars + photos).
  * 4. Borra el usuario de auth.users con cliente admin.
  *    Los cascades on delete encadenan: profile → photos → photo_images → likes
@@ -42,7 +42,7 @@ export async function deleteAccount(
   const typed = confirmedUsername.trim().toLowerCase();
   if (typed !== profile.username) {
     return {
-      error: `Para confirmar tipeá tu nombre de usuario exacto: ${profile.username}`,
+      error: `Para confirmar escribe tu nombre de usuario exacto: ${profile.username}`,
     };
   }
 
@@ -53,7 +53,7 @@ export async function deleteAccount(
   } catch (err) {
     console.error("[deleteAccount] admin client failed:", err);
     return {
-      error: "Configuración del servidor incompleta. Contactá al admin.",
+      error: "Configuración del servidor incompleta. Contacta al admin.",
     };
   }
 

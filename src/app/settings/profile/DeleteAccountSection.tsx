@@ -19,7 +19,7 @@ export function DeleteAccountSection({ username }: Props) {
     setError(null);
 
     if (confirmText.trim().toLowerCase() !== username.toLowerCase()) {
-      setError(`Tipeá exactamente tu nombre de usuario: ${username}`);
+      setError(`Escribe exactamente tu nombre de usuario: ${username}`);
       return;
     }
 
@@ -35,7 +35,7 @@ export function DeleteAccountSection({ username }: Props) {
         setError(result.error);
         return;
       }
-      // En éxito, la action redirige a "/". No deberíamos llegar acá.
+      // En éxito, la action redirige a "/". No deberíamos llegar aquí.
     });
   }
 
@@ -56,13 +56,13 @@ export function DeleteAccountSection({ username }: Props) {
             Se eliminan tus comentarios, likes y guardados en toda la
             comunidad.
           </li>
-          <li>Dejás de seguir y sos dejado de seguir por todos.</li>
+          <li>Dejas de seguir y dejan de seguirte.</li>
           <li>Se borran tus notificaciones y las que generaste.</li>
           <li>
             Tu nombre de usuario <strong>@{username}</strong> queda disponible
             para que otra persona lo tome.
           </li>
-          <li>No vas a poder recuperar ninguno de estos datos.</li>
+          <li>No podrás recuperar ninguno de estos datos.</li>
         </ul>
       </div>
 
@@ -80,7 +80,7 @@ export function DeleteAccountSection({ username }: Props) {
         <div className="mt-6 space-y-4">
           <div>
             <label className="text-xs font-medium uppercase tracking-wider text-accent">
-              Para confirmar, escribí tu nombre de usuario
+              Para confirmar, escribe tu nombre de usuario
             </label>
             <p className="mt-1 font-mono text-xs text-muted">
               Esperado: <strong>{username}</strong>
